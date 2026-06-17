@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - EK Metal Wall Art</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans pt-24">
+
+    <nav class="fixed top-0 left-0 w-full bg-white shadow-sm z-50 px-6 py-4 flex justify-between items-center">
+        <a href="/" class="text-gray-700 hover:text-amber-600 font-medium transition"><i class="fa-solid fa-arrow-left mr-2"></i> Back to Shop</a>
+        <a href="/" class="text-xl font-bold tracking-wider text-gray-800">EK <span class="text-amber-600">METAL</span></a>
+        <div></div>
+    </nav>
+
+    <main class="max-w-3xl mx-auto px-4 py-8">
+        <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            
+            <div class="bg-gray-900 p-6 md:p-8 text-white flex items-center gap-4">
+                <div class="w-16 h-16 bg-amber-600 rounded-full flex justify-center items-center text-2xl font-black shadow-inner">
+                    {{ request.user.username|slice:":2"|upper }}
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-tight">Shipping & Account Details</h1>
+                    <p class="text-xs text-gray-400">Update your address info. Saved data will appear in the fields below.</p>
+                </div>
+            </div>
+
+            <form action="{% url 'profile' %}" method="POST" class="p-6 md:p-8 space-y-6">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">First Name</label>
+                        <input type="text" name="first_name" value="{{ request.user.first_name }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-amber-600 font-medium transition" placeholder="John" required>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Last Name</label>
+                        <input type="text" name="last_name" value="{{ request.user.last_name }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-amber-600 font-medium transition" placeholder="Doe" required>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Country</label>
+                        <select id="country-selector" name="country" onchange="updatePhoneCode()" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-amber-600 transition text-gray-800 font-bold">
+                            <option value="United States" data-code="+1" {% if profile.country == 'United States' %}selected{% endif %}>United States</option>
+                            <option value="Germany" data-code="+49" {% if profile.country == 'Germany' %}selected{% endif %}>Germany</option>
+                            <option value="United Kingdom" data-code="+44" {% if profile.country == 'United Kingdom' %}selected{% endif %}>United Kingdom</option>
+                            <option value="Canada" data-code="+1" {% if profile.country == 'Canada' %}selected{% endif %}>Canada</option>
+                            <option value="France" data-code="+33" {% if profile.country == 'France' %}selected{% endif %}>France</option>
+                            <option value="Netherlands" data-code="+31" {% if profile.country == 'Netherlands' %}selected{% endif %}>Netherlands</option>
+                            <option value="Türkiye" data-code="+90" {% if profile.country == 'Türkiye' %}selected{% endif %}>Türkiye</option>
+                        </select>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Phone Number</label>
+                        <div class="flex">
+                            <input type="text" id="phone-code-display" name="phone_code" value="{{ profile.phone_code|default:'+1' }}" readonly class="w-20 bg-gray-200 border border-r-0 border-gray-300 rounded-l-xl text-center text-sm font-black text-gray-700 focus:outline-none select-none">
+                            <input type="tel" name="phone_number" value="{{ profile.phone_number|default:'' }}" class="w-full bg-gray-50 border border-gray-200 rounded-r-xl px-4 py-3 text-sm focus:outline-amber-600 font-medium transition" placeholder="555 123 4567" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">State / Region</label>
+                        <input type="text" name="state" value="{{ profile.state|default:'' }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-amber-600 font-medium transition" placeholder="California" required>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">City</label>
+                        <input type="text" name="city" value="{{ profile.city|default:'' }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-amber-600 font-medium transition" placeholder="Los Angeles" required>
+                    </div>
+                    <div class="space-y-1.5">
+                        <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">ZIP / Postal Code</label>
+                        <input type="text" name="zip_code" value="{{ profile.zip_code|default:'' }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-amber-600 font-medium transition" placeholder="90001" required>
+                    </div>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-xs font-bold text-gray-700 uppercase tracking-wider">Full Address Description</label>
+                    <textarea name="address_line" rows="3" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-amber-600 font-medium transition resize-none" placeholder="Street name, Apartment number, Suit etc." required>{{ profile.address_line|default:'' }}</textarea>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="w-full bg-gray-900 text-white py-4 rounded-xl font-bold hover:bg-amber-600 transition shadow-lg flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-rotate mr-1"></i> Update & Save Information
+                    </button>
+                </div>
+
+                {% if messages %}
+                    <div class="pt-2 space-y-2">
+                        {% for message in messages %}
+                        <div class="bg-emerald-50 border border-emerald-300 text-emerald-800 text-sm p-4 rounded-xl font-bold flex items-center gap-3 shadow-sm transition-all">
+                            <i class="fa-solid fa-circle-check text-emerald-600 text-lg"></i> 
+                            <span>{{ message }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+            </form>
+        </div>
+    </main>
+
+    <script>
+        function updatePhoneCode() {
+            const selector = document.getElementById('country-selector');
+            const codeDisplay = document.getElementById('phone-code-display');
+            if (selector && codeDisplay) {
+                const selectedOption = selector.options[selector.selectedIndex];
+                if (selectedOption) {
+                    const countryCode = selectedOption.getAttribute('data-code');
+                    codeDisplay.value = countryCode;
+                }
+            }
+        }
+        
+        // Sihirli Dokunuş: Sayfa telefonda veya bilgisayarda ilk yüklendiği an verileri hazırla kanka
+        document.addEventListener("DOMContentLoaded", function() {
+            updatePhoneCode();
+        });
+    </script>
+</body>
+</html>

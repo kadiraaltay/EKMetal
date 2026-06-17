@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt Ol - EK Metal Wall Art</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans h-screen flex items-center justify-center px-4">
+
+    <div class="bg-white p-8 rounded-2xl shadow-md border border-gray-100 max-w-md w-full space-y-6">
+        <div class="text-center space-y-2">
+            <h1 class="text-2xl font-black text-gray-900">Aramıza Katıl</h1>
+            <p class="text-sm text-gray-500">Hemen kayıt ol, sepetini <span class="text-amber-600 font-bold">%10 indirimle</span> tamamla!</p>
+        </div>
+
+        <form method="POST" class="space-y-4">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div class="space-y-1">
+                <label class="block text-xs font-bold text-gray-700 uppercase tracking-wider">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="text-xs text-red-500 font-medium">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <button type="submit" class="w-full bg-gray-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-amber-600 transition shadow-md mt-2">
+                Hesap Oluştur ve Kodu Al
+            </button>
+        </form>
+
+        <div class="text-center text-xs text-gray-400">
+            Zaten hesabın var mı? <a href="#" class="text-amber-600 font-bold hover:underline">Giriş Yap</a>
+        </div>
+    </div>
+
+    <style>
+        form input {
+            width: 100%;
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+        }
+        form input:focus {
+            outline: 2px solid #d97706;
+            background-color: #ffffff;
+        }
+        form .helptext {
+            display: block;
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 0.25rem;
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: sans-serif; color: #333; }
+        .invoice-box { max-width: 800px; margin: auto; padding: 30px; border: 1px solid #eee; font-size: 14px; }
+        .title { font-size: 28px; font-weight: bold; color: #b45309; }
+        table { width: 100%; line-height: inherit; text-align: left; border-collapse: collapse; }
+        table td { padding: 8px; vertical-align: top; }
+        table tr.heading td { bg-color: #111827; color: #fff; font-weight: bold; background: #1f2937; }
+        table tr.item td { border-bottom: 1px solid #eee; }
+        table tr.total td { font-weight: bold; border-top: 2px solid #eee; text-align: right; }
+    </style>
+</head>
+<body>
+    <div class="invoice-box">
+        <table>
+            <tr>
+                <td class="title">EK METAL</td>
+                <td style="text-align: right;">
+                    Invoice #: {{ order.id }}<br>
+                    Date: {{ order.created_at|date:"N j, Y" }}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <strong>From:</strong><br>
+                    EK Metal Wall Art LLC<br>
+                    Istanbul, Turkey
+                </td>
+                <td style="text-align: right;">
+                    <strong>To:</strong><br>
+                    {{ order.first_name }} {{ order.last_name }}<br>
+                    {{ order.address_line }}, {{ order.city }}, {{ order.zip_code }}<br>
+                    {{ order.country }}
+                </td>
+            </tr>
+        </table>
+        <br>
+        <table>
+            <tr class="heading">
+                <td>Product</td>
+                <td>Variant</td>
+                <td>Qty</td>
+                <td style="text-align: right;">Price</td>
+            </tr>
+            {% for item in order.items.all %}
+            <tr class="item">
+                <td>{{ item.product.title }}</td>
+                <td>{% if item.variant %}{{ item.variant.size }}{% else %}Standard{% endif %}</td>
+                <td>{{ item.quantity }}</td>
+                <td style="text-align: right;">${{ item.price }}</td>
+            </tr>
+            {% endfor %}
+            <tr class="total">
+                <td></td><td></td><td></td>
+                <td>Total: ${{ order.total_price }}</td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

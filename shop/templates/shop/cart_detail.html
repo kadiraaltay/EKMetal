@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Cart - EK Metal Wall Art</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans pt-24">
+
+    {% csrf_token %}
+
+    <nav class="fixed top-0 left-0 w-full bg-white shadow-sm z-50 px-6 py-4 flex justify-between items-center">
+        <a href="/" class="text-gray-700 hover:text-amber-600 font-medium transition"><i class="fa-solid fa-arrow-left mr-2"></i> Continue Shopping</a>
+        <a href="/" class="text-xl font-bold tracking-wider text-gray-800">EK <span class="text-amber-600">METAL</span></a>
+        <div></div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <h1 class="text-2xl font-black text-gray-900 mb-8">Shopping Cart</h1>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="bg-green-50 border border-green-200 text-green-800 p-4 rounded-xl flex items-start gap-3 mb-6 shadow-sm">
+                <i class="fa-solid fa-circle-check text-lg text-green-600 mt-0.5"></i>
+                <div>
+                    <p class="font-bold text-sm">{{ message }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- CART ITEMS LIST -->
+            <div class="lg:col-span-2 space-y-4">
+                {% for item in cart.items.all %}
+                <div id="cart-item-row-{{ item.id }}" class="bg-white p-4 rounded-xl shadow-sm flex gap-4 items-center border border-gray-100 relative group">
+                    <img src="{{ item.product.main_image.url }}" class="w-20 h-20 object-cover rounded-lg bg-gray-50">
+                    
+                    <div class="flex-1">
+                        <h3 class="font-bold text-gray-800 text-base">{{ item.product.title }}</h3>
+                        <p class="text-xs text-gray-400 mt-0.5">Size: {% if item.variant %}{{ item.variant.size }}{% else %}Standard{% endif %}</p>
+                        <p class="text-sm font-bold text-amber-600 mt-1">$<span id="item-total-{{ item.id }}">{{ item.get_item_total }}</span></p>
+                    </div>
+
+                    <!-- QUANTITY BUTTONS -->
+                    <div class="flex items-center border border-gray-200 rounded-lg bg-gray-50 overflow-hidden">
+                        <button onclick="changeQuantity('{{ item.id }}', 'decrease')" class="px-2.5 py-1.5 hover:bg-gray-200 text-gray-600 transition text-xs font-bold">
+                            <i class="fa-solid fa-minus"></i>
+                        </button>
+                        <span id="item-qty-{{ item.id }}" class="px-3 py-1 font-semibold text-sm text-gray-800 bg-white min-w-8 text-center">
+                            {{ item.quantity }}
+                        </span>
+                        <button onclick="changeQuantity('{{ item.id }}', 'increase')" class="px-2.5 py-1.5 hover:bg-gray-200 text-gray-600 transition text-xs font-bold">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+
+                    <!-- REMOVE BUTTON -->
+                    <a href="{% url 'remove_from_cart' item.id %}" class="text-gray-300 hover:text-red-500 transition pl-2">
+                        <i class="fa-solid fa-trash-can text-base"></i>
+                    </a>
+                </div>
+                {% empty %}
+                <div class="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100">
+                    <i class="fa-solid fa-basket-shopping text-4xl text-gray-300 mb-3"></i>
+                    <p class="text-gray-500">Your cart is currently empty.</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- ORDER SUMMARY -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 h-fit space-y-4">
+                <h2 class="font-bold text-gray-800 text-lg border-b pb-3 border-gray-100">Order Summary</h2>
+                <div class="flex justify-between text-sm text-gray-600">
+                    <span>Subtotal</span>
+                    <span class="font-semibold text-gray-900">$<span class="cart-total-span">{{ cart.get_total_price }}</span></span>
+                </div>
+                <div class="flex justify-between text-sm text-gray-600 border-b pb-3 border-gray-100">
+                    <span>Shipping</span>
+                    <span class="text-green-600 font-bold">Free</span>
+                </div>
+                <div class="flex justify-between text-base font-bold text-gray-900 pt-1">
+                    <span>Total</span>
+                    <span class="text-xl text-amber-600 font-black">$<span class="cart-total-span">{{ cart.get_total_price }}</span></span>
+                </div>
+                <a href="{% url 'checkout' %}" class="w-full bg-gray-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-amber-600 transition shadow-md mt-2 block text-center">
+    Proceed to Checkout
+</a>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function changeQuantity(itemId, action) {
+            if (window.event) window.event.preventDefault();
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch(`/cart/update/${itemId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({ 'action': action })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.deleted) {
+                    document.getElementById(`cart-item-row-${itemId}`).remove();
+                } else {
+                    document.getElementById(`item-qty-${itemId}`).innerText = data.quantity;
+                    document.getElementById(`item-total-${itemId}`).innerText = parseFloat(data.item_total).toFixed(2);
+                }
+                const totalSpans = document.querySelectorAll('.cart-total-span');
+                totalSpans.forEach(span => {
+                    span.innerText = parseFloat(data.cart_total).toFixed(2);
+                });
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+📦 1. Dinamik PDF Fatura Üretimi & Otomatik Mail (Invoice)
+Ne yapacağız?: Stripe'dan ödeme başarıyla döndüğü an (payment_success_view içinde), sipariş verilerini alıp şık bir EKMetal şablonuyla kurumsal bir PDF Fatura üreteceğiz.
+
+Önemi: Django'nun mail motorunu bağlayarak, müşteriye "Thank you for your order!" maili atıp, bu PDF'i de içine ek koyarak otomatik göndereceğiz. Yurtdışı satışında faturanın anında maile düşmesi müşteriye acayip bir güven verir kanka.
+
+⭐ 2. Satın Alım Onaylı Yorum ve Yıldız Sistemi (Review System)
+Ne yapacağız?: Konuşmamızın başında bahsettiğimiz o efsane sistemi kuracağız. Ürün detay sayfalarına yorum alanı ekleyeceğiz.
+
+Önemi: Arka planda Order tablosuna bakıp, eğer giriş yapan kullanıcı o ürünü gerçekten satın aldıysa yorum kutusunu açacağız. Almadıysa gizleyip "Sadece ürünü satın alanlar yorum yapabilir" diyeceğiz.
+
+🌐 3. Stripe Webhook Entegrasyonu (Gözden Kaçan En Tehlikeli Yer!)
+Ne yapacağız?: Şu an müşteri ödemeyi yapıp tarayıcıyı pat diye kapatırsa veya interneti kesilirse bizim site payment_success linkini yakalayamayabilir ve sipariş admin panelinde ödenmemiş kalabilir.
+
+Önemi: Stripe'ın arka kapısından sitemize doğrudan bir hat (Webhook) bağlayacağız. Müşteri tarayıcıyı kapatsa bile Stripe bizim sunucuya "Kanka adam parayı ödedi, siparişi onayla" diyecek. Bu işin arkasını tamamen sağlama alacağız.
+
+🛠️ 4. Ürün Stok ve Varyant Yönetimi
+Ne yapacağız?: Bir metal tablo satın alındığında, o ürünün stok miktarını otomatik olarak 1 düşüreceğiz. Stok sıfıra indiğinde ise sitede "Out of Stock" (Stokta Yok) yazdırıp satın alma butonunu kapatacağız.
+
+🏠 5. Base Template (base.html) Mimarisine Geçiş
+Ne yapacağız?: Az önce fark ettiğin gibi, üst menüyü değiştirmek için her sayfayı tek tek gezmek tam bir amelelik kanka. Projeye bir tane ana base.html kuracağız; üst menü ve alt menü sadece orada duracak. Diğer tüm sayfalar (index, cart, checkout) onun içini dolduracak. Bir şeyi değiştirdiğinde tüm sitede tek tıkla değişecek.
