@@ -18,5 +18,28 @@ def main():
     execute_from_command_line(sys.argv)
 
 
+
+
+#render ekranı için silinebilir sonradan
+def run_production_triggers():
+    # Sadece Render sunucusunda çalışması için kontrol koyduk kanka
+    if 'RENDER' in os.environ:
+        from django.contrib.auth import get_user_model
+        import django
+        django.setup()
+        
+        # 1. OTOMATİK TASARIM TOPLAMA (collectstatic)
+        print("--- AUTOMATIC COLLECTSTATIC RUNNING ---")
+        os.system("python manage.py collectstatic --noinput")
+        
+        # 2. OTOMATİK ADMİN HESABI AÇMA (createsuperuser)
+        User = get_user_model()
+        if not User.objects.filter(username='kadir').exists():
+            print("--- CREATING SUPERUSER AUTOMATICALLY ---")
+            User.objects.create_superuser('kadir', 'kadiraltay90@gmail.com', 'Kadir1234!')
+            print("--- SUPERUSER CREATED SUCCESSFULY kanka ---")
+
+
 if __name__ == '__main__':
+    run_production_triggers()
     main()
