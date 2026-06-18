@@ -20,4 +20,5 @@ urlpatterns = [
 
     # shop/urls.py içindeki listeye ekle kanka:
     path('my-orders/', views.my_orders_view, name='my_orders'),
+    path('my-reviews/', views.my_reviews_view, name='my_reviews'),
 ]

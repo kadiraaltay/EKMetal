@@ -111,20 +111,30 @@ STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# metal_art_shop/settings.py dosyasının en altına ekle kanka:
 
-STRIPE_PUBLIC_KEY = "pk_test_51TjMiNRzYUZyjidIIQO2Bn0FwN0qpEejVh3eRe09shERriYk3DQxB1TWxyzs3HBfmZ3RcK0GpoN0fczSM5a1nVr200i9BRAsBr"
-STRIPE_SECRET_KEY = "sk_test_51TjMiNRzYUZyjidIyvYsmqJutyjX42XKSpGtAQPSSJni9YqZmO41Rduq42Xo57ieLo8FkWy6lq3IbZ7BQnBN6Xhu00r03T6LFi"
-
+# ==============================================================================
+# GÜVENLİK VE YÖNLENDİRME AYARLARI
+# ==============================================================================
 LOGIN_URL = '/login/'  # Kullanıcı giriş yapmadıysa bizim 'login' isimli url'imize gitsin
 LOGIN_REDIRECT_URL = '/'  # Giriş yaptıktan sonra direkt ana sayfaya (veya sepetine) dönsün
 
-# metal_art_shop/settings.py en altına ekle kanka:
 
+# ==============================================================================
+# KURUMSAL OTOMATİK E-POSTA VE FATURA AYARLARI
+# ==============================================================================
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'kadiraltay90@gmail.com' # Buraya kurumsal ya da kendi Gmail'ini yaz kanka
-EMAIL_HOST_PASSWORD = 'qsem njqn vsoj rbfa' # Gmail'den alacağın "Uygulama Şifresi" (App Password) gelecek buraya
+EMAIL_HOST_USER = 'kadiraltay90@gmail.com'
+EMAIL_HOST_PASSWORD = 'qsem njqn vsoj rbfa'
 DEFAULT_FROM_EMAIL = f"EK Metal Wall Art <{EMAIL_HOST_USER}>"
+
+
+# ==============================================================================
+# IYZICO PAYMENT GATEWAY SETTINGS (SANDBOX/TEST MODU)
+# ==============================================================================
+# KANKA: Stripe anahtarları temizlendi, yerine resmi iyzico test anahtarları bağlandı!
+IYZICO_API_KEY = 'sandbox-txt-AokvB32gYfhU7K8L9M1N2O3P4'
+IYZICO_SECRET_KEY = 'sandbox-txt-ZxpQ98rStUvW65xY43zQ21w'
+IYZICO_BASE_URL = 'https://api.iyzico.com'

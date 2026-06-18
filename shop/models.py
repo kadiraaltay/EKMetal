@@ -148,6 +148,8 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.product.title} x {self.quantity} (Order #{self.order.id})"
     
+
+    
 # shop/models.py dosyasının en altına ekle kanka:
 
 class Review(models.Model):
@@ -155,12 +157,16 @@ class Review(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews', verbose_name="User")
     rating = models.PositiveIntegerField(default=5, verbose_name="Rating (1-5)")
     comment = models.TextField(verbose_name="Review Comment")
+    
+    # KANKA: Kullanıcının yükleyeceği ürün görseli için bu alanı ekliyoruz (Zorunlu değil, opsiyonel)
+    image = models.ImageField(upload_to='reviews/', blank=True, null=True, verbose_name="Review Image")
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = "Product Review"
         verbose_name_plural = "Product Reviews"
-        ordering = ['-created_at'] # En yeni yorum en üstte görünsün kanka
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"{self.user.username} - {self.product.title} ({self.rating}★)"

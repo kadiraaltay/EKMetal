@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Reviews - EK Metal Wall Art</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans pt-24">
+
+    <nav class="fixed top-0 left-0 w-full bg-white shadow-xs z-50 px-6 py-4 flex justify-between items-center border-b border-gray-100">
+        <a href="/" class="text-gray-700 hover:text-amber-600 font-bold text-sm transition flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Back to Shop
+        </a>
+        <a href="/" class="text-xl font-black tracking-wider text-gray-800">EK <span class="text-amber-600">METAL</span></a>
+        <div></div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto px-4 py-12 min-h-screen">
+        <h1 class="text-3xl font-black tracking-tight text-gray-900 mb-2 flex items-center gap-2">
+            <i class="fa-solid fa-comments text-amber-600"></i> My Reviews
+        </h1>
+        <p class="text-sm text-gray-500 mb-8">Here you can see all the reviews and ratings you have submitted for our products.</p>
+
+        <div class="space-y-6">
+            {% for review in reviews %}
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-50 pb-4">
+                    <div class="flex items-center gap-4">
+                        {% if review.product.main_image %}
+                        <img src="{{ review.product.main_image.url }}" alt="{{ review.product.title }}" class="w-16 h-16 rounded-xl object-cover border border-gray-100">
+                        {% endif %}
+                        <div>
+                            <a href="{% url 'product_detail' review.product.pk %}" class="text-sm font-black text-gray-900 hover:text-amber-600 transition">
+                                {{ review.product.title }}
+                            </a>
+                            <p class="text-[11px] text-gray-400 mt-0.5">Reviewed on {{ review.created_at|date:"N j, Y" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="text-amber-500 text-sm bg-amber-50/60 px-3 py-1 rounded-full border border-amber-100 w-fit">
+                        {% if review.rating == 5 %}⭐⭐⭐⭐⭐ 5/5
+                        {% elif review.rating == 4 %}⭐⭐⭐⭐ 4/5
+                        {% elif review.rating == 3 %}⭐⭐⭐ 3/5
+                        {% elif review.rating == 2 %}⭐⭐ 2/5
+                        {% else %}⭐ 1/5{% endif %}
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <p class="text-sm text-gray-600 leading-relaxed font-medium bg-gray-50/50 p-4 rounded-xl">
+                        "{{ review.comment }}"
+                    </p>
+                    
+                    {% if review.image %}
+                    <div>
+                        <p class="text-[11px] font-bold text-gray-400 uppercase mb-1.5">Your Uploaded Photo:</p>
+                        <img src="{{ review.image.url }}" alt="User Uploaded Photo" class="w-32 h-auto rounded-xl border border-gray-200 shadow-xs">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-16 bg-white rounded-3xl border border-gray-100 p-8 shadow-xs">
+                <div class="w-16 h-16 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                    <i class="fa-regular fa-comment-dots"></i>
+                </div>
+                <h3 class="text-base font-bold text-gray-800 mb-1">No reviews yet</h3>
+                <p class="text-xs text-gray-400 max-w-xs mx-auto mb-6">You haven't written any reviews for your purchased items yet.</p>
+                <a href="{% url 'my_orders' %}" class="bg-gray-900 text-white px-5 py-2 rounded-xl font-bold text-xs hover:bg-gray-800 transition">
+                    Check My Orders
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>

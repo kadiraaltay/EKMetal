@@ -24,7 +24,8 @@
                         <i class="fa-solid fa-truck text-amber-600"></i> Shipping Information
                     </h2>
                     
-                        <form id="payment-form" action="{% url 'checkout' %}" method="POST" class="space-y-4">                        {% csrf_token %}
+                    <form id="payment-form" action="{% url 'checkout' %}" method="POST" class="space-y-4">
+                        {% csrf_token %}
                         
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="space-y-1">
@@ -70,27 +71,24 @@
 
                         <div class="pt-4 border-t border-gray-100">
                             <h3 class="text-md font-black text-gray-800 mb-2 flex items-center gap-2">
-                                <i class="fa-solid fa-credit-card text-emerald-600"></i> Payment Method
+                                <i class="fa-solid fa-shield-halved text-emerald-600"></i> Secure Checkout
                             </h3>
-                            <p class="text-xs text-gray-400">Secure payments are handled via Stripe. Card fields will be integrated in the next step.</p>
+                            <p class="text-xs text-gray-400">Secure payments are processed internationally via iyzico. Card fields will be displayed securely in the next step.</p>
                         </div>
 
-
-
-                    {% if messages %}
-                        <div class="mb-4 space-y-2">
-                            {% for message in messages %}
-                            <div class="bg-red-50 border border-red-300 text-red-800 text-xs p-3 rounded-xl font-bold flex items-center gap-2">
-                                <i class="fa-solid fa-circle-exclamation text-red-600 text-sm"></i>
-                                <span>{{ message }}</span>
+                        {% if messages %}
+                            <div class="mb-4 space-y-2">
+                                {% for message in messages %}
+                                <div class="bg-red-50 border border-red-300 text-red-800 text-xs p-3 rounded-xl font-bold flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-exclamation text-red-600 text-sm"></i>
+                                    <span>{{ message }}</span>
+                                </div>
+                                {% endfor %}
                             </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-
+                        {% endif %}
 
                         <button type="submit" class="w-full bg-emerald-600 text-white py-4 rounded-xl font-bold hover:bg-emerald-700 transition shadow-lg mt-4 flex items-center justify-center gap-2 cursor-pointer">
-                            <i class="fa-solid fa-lock"></i> Pay ${{ total_price }} Securely
+                            <i class="fa-solid fa-arrow-right"></i> Proceed to Payment (${{ total_price }})
                         </button>
                     </form>
                 </div>
@@ -119,7 +117,7 @@
                     <div class="space-y-2 text-sm border-t border-gray-100 pt-4">
                         <div class="flex justify-between text-gray-500">
                             <span>Subtotal</span>
-                            <span class="font-medium">${{total_price }}</span>
+                            <span class="font-medium">${{ total_price }}</span>
                         </div>
                         <div class="flex justify-between text-gray-500">
                             <span>Shipping</span>
