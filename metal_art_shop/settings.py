@@ -141,6 +141,6 @@ IYZICO_SECRET_KEY = 'sandbox-txt-ZxpQ98rStUvW65xY43zQ21w'
 IYZICO_BASE_URL = 'https://api.iyzico.com'
 
 
-# Kanka: Canlıda CSS ve JS dosyalarını sıkıştırıp hafızada tutması için bunu ekliyoruz
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Kanka: Canlıda CSS ve JS dosyalarını sıkıştırıp hafızada tutması için bunu ekliyoruz!
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
