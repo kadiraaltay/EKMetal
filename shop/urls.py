@@ -21,4 +21,8 @@ urlpatterns = [
     # shop/urls.py içindeki listeye ekle kanka:
     path('my-orders/', views.my_orders_view, name='my_orders'),
     path('my-reviews/', views.my_reviews_view, name='my_reviews'),
+
+    # shop/urls.py içindeki urlpatterns listesine ekle:
+    path('apply-coupon/', views.apply_coupon, name='apply_coupon'),
+    path('remove-coupon/', views.remove_coupon, name='remove_coupon'),
 ]

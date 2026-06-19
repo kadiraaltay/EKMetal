@@ -18,6 +18,9 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 
+from django.shortcuts import redirect, get_object_or_404
+from .models import Cart, Coupon
+
 # ==================== IYZICO DOĞRUDAN API MOTORU (MOCK SİMÜLASYONLU) ====================
 def iyzico_raw_request(endpoint, request_data):
     """
@@ -173,7 +176,8 @@ def add_to_cart(request, product_id):
     
     variant = None
     if variant_id and variant_id != "0":
-        variant = ProductVariant.objects.filter(product=product, price_impact=variant_id).first()
+        # KANKA DÜZELTME BURADA: price_impact yerine doğrudan 'id' üzerinden arama yapıyoruz!
+        variant = ProductVariant.objects.filter(product=product, id=variant_id).first()
 
     cart, created = Cart.objects.get_or_create(user=request.user)
     cart_item, item_created = CartItem.objects.get_or_create(
@@ -515,3 +519,30 @@ def my_reviews_view(request):
         'reviews': user_reviews
     }
     return render(request, 'shop/my_reviews.html', context)
+
+
+#kupon
+def apply_coupon(request):
+    if request.method == "POST":
+        code = request.POST.get('coupon_code', '').strip()
+        cart = get_object_or_404(Cart, user=request.user)
+        
+        # Kuponu veritabanında ara kanka
+        coupon = Coupon.objects.filter(code__iexact=code, is_active=True).first()
+        
+        if coupon:
+            cart.coupon = coupon
+            cart.save()
+            messages.success(request, f"Kupon başarıyla uygulandı! %{coupon.discount_percent} indirim kazandınız.")
+        else:
+            messages.error(request, "Geçersiz veya süresi dolmuş kupon kodu kanka!")
+            
+    return redirect('cart_detail')
+
+# Kanka istersen kuponu iptal etmek için bir de temizleme fonksiyonu koyalım:
+def remove_coupon(request):
+    cart = get_object_or_404(Cart, user=request.user)
+    cart.coupon = None
+    cart.save()
+    messages.info(request, "Kupon kaldırıldı.")
+    return redirect('cart_detail')

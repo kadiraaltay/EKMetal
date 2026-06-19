@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from .models import Category, Product, ProductImage, ProductVariant, Profile
 from .models import Order, OrderItem
 from .models import Review
-
+from .models import Coupon
 
 
 # ==========================================
@@ -88,3 +88,10 @@ class OrderAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at', 'total_price', 'stripe_payment_intent')
 
 admin.site.register(Review)
+
+
+@admin.register(Coupon)
+class CouponAdmin(admin.ModelAdmin):
+    list_display = ['code', 'discount_percent', 'is_active', 'created_at']
+    list_filter = ['is_active']
+    search_fields = ['code']

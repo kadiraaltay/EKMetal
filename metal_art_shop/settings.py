@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-!i$f_x-b-n#=(&1wacz+d9w$-1&kf2cbx8ou4b*o@4amg&+l6h'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['ekmetal.onrender.com', '127.0.0.1', 'localhost']
 
@@ -31,6 +31,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -138,3 +139,8 @@ DEFAULT_FROM_EMAIL = f"EK Metal Wall Art <{EMAIL_HOST_USER}>"
 IYZICO_API_KEY = 'sandbox-txt-AokvB32gYfhU7K8L9M1N2O3P4'
 IYZICO_SECRET_KEY = 'sandbox-txt-ZxpQ98rStUvW65xY43zQ21w'
 IYZICO_BASE_URL = 'https://api.iyzico.com'
+
+
+# Kanka: Canlıda CSS ve JS dosyalarını sıkıştırıp hafızada tutması için bunu ekliyoruz
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATIC_ROOT = BASE_DIR / 'staticfiles'

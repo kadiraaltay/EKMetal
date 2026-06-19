@@ -3,6 +3,10 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+# ==========================================
+# 1. KATEGORİ VE KUPON MODELLERİ
+# ==========================================
+
 class Category(models.Model):
     name = models.CharField(max_length=100, verbose_name="Category Name")
     slug = models.SlugField(unique=True, help_text="Unique slug for URL")
@@ -14,17 +18,26 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+
+class Coupon(models.Model):
+    code = models.CharField(max_length=50, unique=True, verbose_name="Kupon Kodu")
+    discount_percent = models.PositiveIntegerField(default=10, verbose_name="İndirim Oranı (%)")
+    is_active = models.BooleanField(default=True, verbose_name="Aktif mi?")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.code} (-%{self.discount_percent})"
+
+
+# ==========================================
+# 2. ÜRÜN VE VARYANT MODELLERİ
+# ==========================================
+
 class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='products', verbose_name="Category")
     title = models.CharField(max_length=200, verbose_name="Product Title")
     description = models.TextField(verbose_name="Product Description")
-
-    description_features = models.TextField(
-        blank=True, 
-        null=True, 
-        verbose_name="2. Açıklama (Kutulara Gidecek Kurumsal Metin)"
-    )
-
+    description_features = models.TextField(blank=True, null=True, verbose_name="2. Açıklama (Kutulara Gidecek Kurumsal Metin)")
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Base Price (Smallest Size)")
     discount_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Discounted Base Price")
     stock = models.IntegerField(default=0, verbose_name="Stock Quantity")
@@ -40,6 +53,7 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
+
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images', verbose_name="Product")
     image = models.ImageField(upload_to='products/gallery/', verbose_name="Gallery Image")
@@ -47,6 +61,7 @@ class ProductImage(models.Model):
     class Meta:
         verbose_name = "Product Image"
         verbose_name_plural = "Product Images"
+
 
 class ProductVariant(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants', verbose_name="Product")
@@ -60,15 +75,33 @@ class ProductVariant(models.Model):
     def __str__(self):
         return f"{self.product.title} - {self.size} (+${self.price_impact})"
 
+
+# ==========================================
+# 3. SEPET MODELLERİ (Sıralama Düzeltildi kanka!)
+# ==========================================
+
 class Cart(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='cart', verbose_name="User")
+    coupon = models.ForeignKey(Coupon, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Uygulanan Kupon")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.user.username}'s Cart"
 
-    def get_total_price(self):
+    def get_subtotal_price(self):
         return sum(item.get_item_total() for item in self.items.all())
+
+    def get_discount_amount(self):
+        subtotal = self.get_subtotal_price()
+        if self.coupon:
+            return (subtotal * self.coupon.discount_percent) / 100
+        return 0
+
+    def get_total_price(self):
+        subtotal = self.get_subtotal_price()
+        discount = self.get_discount_amount()
+        return max(0, subtotal - discount)
+
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items', verbose_name="Cart")
@@ -84,7 +117,72 @@ class CartItem(models.Model):
             return self.variant.price_impact * self.quantity
         base = self.product.discount_price if self.product.discount_price else self.product.price
         return base * self.quantity
-    
+
+
+# ==========================================
+# 4. SİPARİŞ VE YORUM MODELLERİ
+# ==========================================
+
+class Order(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending Payment'),
+        ('Paid', 'Paid (Preparing Product)'),
+        ('Shipped', 'Shipped (On the Way)'),
+        ('Completed', 'Delivered & Completed'),
+        ('Cancelled', 'Cancelled'),
+    ]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    phone_code = models.CharField(max_length=10)
+    phone_number = models.CharField(max_length=20)
+    country = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
+    city = models.CharField(max_length=100)
+    zip_code = models.CharField(max_length=20)
+    address_line = models.TextField()
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    stripe_payment_intent = models.CharField(max_length=255, blank=True, null=True, verbose_name="Stripe ID")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Order #{self.id} - {self.user.username} ({self.get_status_display()})"
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    variant = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, null=True, blank=True)
+    quantity = models.PositiveIntegerField(default=1)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.product.title} x {self.quantity} (Order #{self.order.id})"
+
+
+class Review(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews', verbose_name="Product")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews', verbose_name="User")
+    rating = models.PositiveIntegerField(default=5, verbose_name="Rating (1-5)")
+    comment = models.TextField(verbose_name="Review Comment")
+    image = models.ImageField(upload_to='reviews/', blank=True, null=True, verbose_name="Review Image")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Product Review"
+        verbose_name_plural = "Product Reviews"
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.product.title} ({self.rating}★)"
+
+
+# ==========================================
+# 5. PROFİL SİNYALLERİ (SIGNALS)
+# ==========================================
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile') 
     phone_code = models.CharField(max_length=10, blank=True, null=True, default='+1')
@@ -98,75 +196,14 @@ class Profile(models.Model):
     def __str__(self):
         return f"{self.user.username}'s Profile"
 
+
 @receiver(post_save, sender=User)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.get_or_create(user=instance)
 
+
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     profile, created = Profile.objects.get_or_create(user=instance)
     profile.save()
-
-class Order(models.Model):
-    # KANKA: Kargo ve sipariş yönetim adımlarını buraya tam kurumsal dilde kilitledik!
-    STATUS_CHOICES = [
-        ('Pending', 'Pending Payment'),
-        ('Paid', 'Paid (Preparing Product)'),   # Ürün Hazırlanıyor Aşaması
-        ('Shipped', 'Shipped (On the Way)'),     # Kargoya Verildi Aşaması
-        ('Completed', 'Delivered & Completed'),  # Teslim Edildi Aşaması
-        ('Cancelled', 'Cancelled'),
-    ]
-
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
-    
-    first_name = models.CharField(max_length=100)
-    last_name = models.CharField(max_length=100)
-    phone_code = models.CharField(max_length=10)
-    phone_number = models.CharField(max_length=20)
-    country = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
-    city = models.CharField(max_length=100)
-    zip_code = models.CharField(max_length=20)
-    address_line = models.TextField()
-    
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
-    stripe_payment_intent = models.CharField(max_length=255, blank=True, null=True, verbose_name="Stripe ID")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Order #{self.id} - {self.user.username} ({self.get_status_display()})"
-
-class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    variant = models.ForeignKey(ProductVariant, on_delete=models.SET_NULL, null=True, blank=True)
-    quantity = models.PositiveIntegerField(default=1)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-
-    def __str__(self):
-        return f"{self.product.title} x {self.quantity} (Order #{self.order.id})"
-    
-
-    
-# shop/models.py dosyasının en altına ekle kanka:
-
-class Review(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews', verbose_name="Product")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews', verbose_name="User")
-    rating = models.PositiveIntegerField(default=5, verbose_name="Rating (1-5)")
-    comment = models.TextField(verbose_name="Review Comment")
-    
-    # KANKA: Kullanıcının yükleyeceği ürün görseli için bu alanı ekliyoruz (Zorunlu değil, opsiyonel)
-    image = models.ImageField(upload_to='reviews/', blank=True, null=True, verbose_name="Review Image")
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = "Product Review"
-        verbose_name_plural = "Product Reviews"
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"{self.user.username} - {self.product.title} ({self.rating}★)"
