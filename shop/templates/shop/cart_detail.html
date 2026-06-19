@@ -13,7 +13,7 @@
 
     <nav class="fixed top-0 left-0 w-full bg-white shadow-xs z-50 px-6 py-4 flex justify-between items-center border-b border-gray-100">
         <a href="/" class="text-gray-700 hover:text-amber-600 font-medium transition"><i class="fa-solid fa-arrow-left mr-2"></i> Continue Shopping</a>
-        <a href="/" class="text-xl font-bold tracking-wider text-gray-800">EK <span class="text-amber-600">METAL</span></a>
+        <a href="/" class="text-xl font-bold tracking-wider text-gray-800">EK<span class="text-amber-600">METAL</span></a>
         <div></div>
     </nav>
 
@@ -39,20 +39,20 @@
             
             <div class="lg:col-span-2 space-y-4">
                 {% for item in cart.items.all %}
-                <div id="cart-item-row-${{ item.id }}" class="bg-white p-4 rounded-xl shadow-xs flex gap-4 items-center border border-gray-100 relative group">
+                <div id="cart-item-row-{{ item.id }}" class="bg-white p-4 rounded-xl shadow-xs flex gap-4 items-center border border-gray-100 relative group">
                     <img src="{{ item.product.main_image.url }}" class="w-20 h-20 object-cover rounded-lg bg-gray-50 shrink-0">
                     
                     <div class="flex-1 min-w-0">
                         <h3 class="font-bold text-gray-800 text-base truncate">{{ item.product.title }}</h3>
                         <p class="text-xs text-gray-400 mt-0.5">Size: {% if item.variant %}{{ item.variant.size }}{% else %}Standard{% endif %}</p>
-                        <p class="text-sm font-bold text-amber-600 mt-1">$<span id="item-total-${{ item.id }}">{{ item.get_item_total }}</span></p>
+                        <p class="text-sm font-bold text-amber-600 mt-1">$<span id="item-total-{{ item.id }}">{{ item.get_item_total }}</span></p>
                     </div>
 
                     <div class="flex items-center border border-gray-200 rounded-lg bg-gray-50 overflow-hidden shrink-0">
                         <button onclick="changeQuantity('{{ item.id }}', 'decrease')" class="px-2.5 py-1.5 hover:bg-gray-200 text-gray-600 transition text-xs font-bold cursor-pointer">
                             <i class="fa-solid fa-minus"></i>
                         </button>
-                        <span id="item-qty-${{ item.id }}" class="px-3 py-1 font-semibold text-sm text-gray-800 bg-white min-w-8 text-center">
+                        <span id="item-qty-{{ item.id }}" class="px-3 py-1 font-semibold text-sm text-gray-800 bg-white min-w-8 text-center">
                             {{ item.quantity }}
                         </span>
                         <button onclick="changeQuantity('{{ item.id }}', 'increase')" class="px-2.5 py-1.5 hover:bg-gray-200 text-gray-600 transition text-xs font-bold cursor-pointer">
@@ -134,7 +134,6 @@
                 if (data.deleted) {
                     const row = document.getElementById(`cart-item-row-${itemId}`);
                     if (row) row.remove();
-                    // Kanka eğer sepette hiç ürün kalmadıysa sayfayı yenileyelim ki "Sepetiniz Boş" yazısı çıksın
                     if (parseFloat(data.cart_total) === 0) {
                         location.reload();
                     }
@@ -145,28 +144,20 @@
                     if (totalElem) totalElem.innerText = parseFloat(data.item_total).toFixed(2);
                 }
                 
-                // KANKA: Sayfa yenilenmeden tüm kupon ve sepet fiyatlarını AJAX ile anlık güncelliyoruz
+                // KANKA: Fiyat atamaları backendden gelen tam verilere göre senkronize edildi
                 const subtotalSpan = document.getElementById('cart-subtotal-span');
                 const totalSpan = document.getElementById('cart-total-span');
                 const discountSpan = document.getElementById('cart-discount-span');
                 const discountWrapper = document.getElementById('discount-wrapper');
-                const discountLabel = document.getElementById('discount-label');
 
-                if (subtotalSpan) subtotalSpan.innerText = parseFloat(data.cart_subtotal || data.cart_total).toFixed(2);
+                if (subtotalSpan) subtotalSpan.innerText = parseFloat(data.cart_subtotal).toFixed(2);
                 if (totalSpan) totalSpan.innerText = parseFloat(data.cart_total).toFixed(2);
                 
-                // Eğer arka plandaki sepet güncelleme fonksiyonundan indirim verisi dönüyorsa burayı da besleyelim kanka
                 if (data.discount_amount && parseFloat(data.discount_amount) > 0) {
                     if (discountSpan) discountSpan.innerText = parseFloat(data.discount_amount).toFixed(2);
                     if (discountWrapper) discountWrapper.classList.remove('hidden');
-                } else if (discountSpan && parseFloat(discountSpan.innerText) > 0) {
-                    // Eğer kupon zaten uygulanmışsa, yeni adede göre indirimi JavaScript ile el yordamıyla hesaplayalım kanka
-                    const currentSubtotal = parseFloat(subtotalSpan.innerText);
-                    const currentTotal = parseFloat(totalSpan.innerText);
-                    const newDiscount = currentSubtotal - currentTotal;
-                    if (newDiscount > 0) {
-                        discountSpan.innerText = newDiscount.toFixed(2);
-                    }
+                } else {
+                    if (discountWrapper) discountWrapper.classList.add('hidden');
                 }
             })
             .catch(error => console.error('Error:', error));

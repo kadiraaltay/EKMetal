@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 # ==========================================
 # 1. KATEGORİ VE KUPON MODELLERİ
@@ -21,7 +22,11 @@ class Category(models.Model):
 
 class Coupon(models.Model):
     code = models.CharField(max_length=50, unique=True, verbose_name="Kupon Kodu")
-    discount_percent = models.PositiveIntegerField(default=10, verbose_name="İndirim Oranı (%)")
+    discount_percent = models.PositiveIntegerField(
+        default=10, 
+        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        verbose_name="İndirim Oranı (%)"
+    )
     is_active = models.BooleanField(default=True, verbose_name="Aktif mi?")
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -77,7 +82,7 @@ class ProductVariant(models.Model):
 
 
 # ==========================================
-# 3. SEPET MODELLERİ (Sıralama Düzeltildi kanka!)
+# 3. SEPET MODELLERİ
 # ==========================================
 
 class Cart(models.Model):
@@ -113,10 +118,17 @@ class CartItem(models.Model):
         return f"{self.product.title} ({self.quantity} Pcs)"
 
     def get_item_total(self):
+        """
+        KANKA YENİ MANTIK:
+        Eğer bir varyant (boyut) seçildiyse, taban fiyat tamamen devre dışı kalır ve 
+        direkt varyantın kendi fiyatı (price_impact alanına yazdığın net rakam) baz alınır!
+        """
         if self.variant:
             return self.variant.price_impact * self.quantity
-        base = self.product.discount_price if self.product.discount_price else self.product.price
-        return base * self.quantity
+            
+        # Eğer varyant seçilmediyse standart taban fiyatı kullanır
+        base_price = self.product.discount_price if self.product.discount_price else self.product.price
+        return base_price * self.quantity
 
 
 # ==========================================
@@ -144,7 +156,7 @@ class Order(models.Model):
     address_line = models.TextField()
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
-    stripe_payment_intent = models.CharField(max_length=255, blank=True, null=True, verbose_name="Stripe ID")
+    iyzico_payment_id = models.CharField(max_length=255, blank=True, null=True, verbose_name="iyzico Payment ID")
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -165,7 +177,7 @@ class OrderItem(models.Model):
 class Review(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews', verbose_name="Product")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews', verbose_name="User")
-    rating = models.PositiveIntegerField(default=5, verbose_name="Rating (1-5)")
+    rating = models.PositiveIntegerField(default=5, validators=[MinValueValidator(1), MaxValueValidator(5)], verbose_name="Rating (1-5)")
     comment = models.TextField(verbose_name="Review Comment")
     image = models.ImageField(upload_to='reviews/', blank=True, null=True, verbose_name="Review Image")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -180,7 +192,7 @@ class Review(models.Model):
 
 
 # ==========================================
-# 5. PROFİL SİNYALLERİ (SIGNALS)
+# 5. PROFİL VE SİNYALLER (SIGNALS)
 # ==========================================
 
 class Profile(models.Model):
@@ -198,12 +210,8 @@ class Profile(models.Model):
 
 
 @receiver(post_save, sender=User)
-def create_user_profile(sender, instance, created, **kwargs):
-    if created:
-        Profile.objects.get_or_create(user=instance)
-
-
-@receiver(post_save, sender=User)
-def save_user_profile(sender, instance, **kwargs):
-    profile, created = Profile.objects.get_or_create(user=instance)
-    profile.save()
+def create_or_save_user_profile(sender, instance, created, **kwargs):
+    """Kanka: İki ayrı fonksiyon yerine tek bir sinyal altında daha temiz ve optimize hale getirildi."""
+    profile, _ = Profile.objects.get_or_create(user=instance)
+    if not created:
+        profile.save()

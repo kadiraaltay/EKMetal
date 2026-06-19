@@ -11,7 +11,7 @@
 
     <nav class="fixed top-0 left-0 w-full bg-white shadow-sm z-50 px-6 py-4 flex justify-between items-center">
         <a href="/" class="text-gray-700 hover:text-amber-600 font-medium transition"><i class="fa-solid fa-arrow-left mr-2"></i> Back to Shop</a>
-        <a href="/" class="text-xl font-bold tracking-wider text-gray-800">EK <span class="text-amber-600">METAL</span></a>
+        <a href="/" class="text-xl font-bold tracking-wider text-gray-800">EK<span class="text-amber-600">METAL</span></a>
         <div></div>
     </nav>
 
@@ -58,25 +58,49 @@
 
                     <div class="p-6 divide-y divide-gray-100">
                         {% for item in order.items.all %}
-                        <div class="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
-                            <img src="{{ item.product.main_image.url }}" class="w-16 h-16 rounded-xl object-cover border border-gray-100 shadow-sm">
-                            <div class="flex-1 min-w-0">
-                                <h3 class="text-sm font-bold text-gray-800 truncate">{{ item.product.title }}</h3>
-                                <p class="text-xs text-gray-400 mt-1">
-                                    Quantity: <span class="font-semibold text-gray-600">{{ item.quantity }}</span>
-                                    {% if item.variant %}| Size: <span class="font-semibold text-gray-600">{{ item.variant.size }}</span>{% endif %}
-                                </p>
+                        <div class="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
+                            
+                            <div class="flex items-center gap-4 flex-1 min-w-0">
+                                <a href="{% url 'product_detail' item.product.id %}" class="shrink-0 block group">
+                                    <img src="{{ item.product.main_image.url }}" class="w-16 h-16 rounded-xl object-cover border border-gray-100 shadow-sm group-hover:opacity-80 transition">
+                                </a>
+
+                                <div class="min-w-0 flex-1">
+                                    <a href="{% url 'product_detail' item.product.id %}" class="hover:text-amber-600 transition block">
+                                        <h3 class="text-sm font-bold text-gray-800 truncate">{{ item.product.title }}</h3>
+                                    </a>
+                                    <p class="text-xs text-gray-400 mt-1">
+                                        Quantity: <span class="font-semibold text-gray-600">{{ item.quantity }}</span>
+                                        {% if item.variant %}| Size: <span class="font-semibold text-gray-600">{{ item.variant.size }}</span>{% endif %}
+                                    </p>
+                                </div>
                             </div>
-                            <div class="text-right">
-                                <span class="text-sm font-black text-gray-800">${{ item.price }}</span>
+
+                            <div class="flex items-center gap-6 shrink-0">
+                                <div class="text-right">
+                                    <span class="text-sm font-black text-gray-800">${{ item.price }}</span>
+                                </div>
+                                
+                                <div class="min-w-[120px] text-right">
+                                    <div class="inline-review-container">
+                                        {% for review in order.user.reviews.all %}
+                                            {% if review.product.id == item.product.id %}
+                                                <span class="hidden data-has-review" data-product-id="{{ item.product.id }}"></span>
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        <div id="btn-container-{{ order.id }}-{{ item.product.id }}"></div>
+                                    </div>
+                                </div>
                             </div>
+
                         </div>
                         {% endfor %}
                     </div>
 
                     <div class="bg-gray-50 px-6 py-3 border-t border-gray-100 text-xs text-gray-500 flex justify-between items-center">
                         <span><i class="fa-solid fa-location-dot mr-1"></i> Shipping to: <strong>{{ order.city }}, {{ order.country }}</strong></span>
-                        <span class="text-gray-400">Secure Payment via Stripe</span>
+                        <span class="text-gray-400">Secure Payment via iyzico</span>
                     </div>
 
                 </div>
@@ -96,5 +120,32 @@
         {% endif %}
     </main>
 
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            {% if orders %}
+                {% for order in orders %}
+                    {% for item in order.items.all %}
+                        (function() {
+                            const container = document.getElementById("btn-container-{{ order.id }}-{{ item.product.id }}");
+                            const parentCard = container.closest('.bg-white');
+                            const hasReview = parentCard.querySelector('.data-has-review[data-product-id="{{ item.product.id }}"]');
+                            
+                            const btn = document.createElement('a');
+                            if (hasReview) {
+                                btn.href = "{% url 'product_detail' item.product.id %}#reviews";
+                                btn.className = "inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 text-[11px] font-bold px-3 py-2 rounded-lg transition border border-gray-200 text-center w-full";
+                                btn.innerHTML = '<i class="fa-solid fa-pen-to-square mr-1"></i> Update Review';
+                            } else {
+                                btn.href = "{% url 'product_detail' item.product.id %}#review-form";
+                                btn.className = "inline-block bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold px-3 py-2 rounded-lg transition text-center w-full shadow-xs";
+                                btn.innerHTML = '<i class="fa-solid fa-star mr-1"></i> Write Review';
+                            }
+                            container.appendChild(btn);
+                        })();
+                    {% endfor %}
+                {% endfor %}
+            {% endif %}
+        });
+    </script>
 </body>
 </html>

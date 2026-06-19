@@ -4,28 +4,28 @@ import base64
 import hmac
 import hashlib
 import requests
+import random
+import string
+from django.conf import settings
+from django.shortcuts import render, redirect, get_object_or_404
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from xhtml2pdf import pisa
-from django.conf import settings
-from django.shortcuts import render, redirect, get_object_or_404
-from .models import Product, Category, Cart, CartItem, ProductVariant, Profile, Order, OrderItem, Review
 from django.db.models import Q
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth import login, authenticate, login as auth_login, logout as auth_logout
+from django.contrib.auth import login as auth_login, logout as auth_logout, authenticate
 from django.contrib import messages
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 
-from django.shortcuts import redirect, get_object_or_404
-from .models import Cart, Coupon
+from .models import Product, Category, Cart, CartItem, ProductVariant, Profile, Order, OrderItem, Review, Coupon
 
-# ==================== IYZICO DOĞRUDAN API MOTORU (MOCK SİMÜLASYONLU) ====================
+# ==================== IYZICO API MOTORU (KARARLI MOCK SİMÜLASYONLU) ====================
 def iyzico_raw_request(endpoint, request_data):
     """
-    Kullanıcının bilgisayarındaki internet/DNS blokajını aşmak için 
-    lokalde simülasyon (Mock) yapar, canlı sunucuda ise gerçek iyzico'ya bağlanır kanka!
+    İnternet/DNS blokajlarını aşmak için lokalde simülasyon yapar, 
+    canlı sunucuda ise gerçek iyzico API'sine bağlanır kanka!
     """
     try:
         api_key = getattr(settings, 'IYZICO_API_KEY', 'sandbox-test-key')
@@ -33,9 +33,6 @@ def iyzico_raw_request(endpoint, request_data):
         base_url = 'https://api.iyzico.com'
         
         url = f"{base_url}{endpoint}"
-        
-        import random
-        import string
         random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
         
         payload = random_str + endpoint + json.dumps(request_data)
@@ -50,17 +47,13 @@ def iyzico_raw_request(endpoint, request_data):
             'Content-Type': 'application/json'
         }
         
-        # İstek atmayı dener, 3 saniye içinde cevap gelmezse veya DNS hatası verirse simülasyona geçer kanka
         response = requests.post(url, json=request_data, headers=headers, timeout=3)
         return response.json()
         
     except Exception as e:
-        # KANKA BÜYÜK HİLE BURADA: Bilgisayarın internete çıkamazsa hemen aşağıdakiler devreye girer!
-        print(f"--- LOKAL SİMÜLASYON DEVREDE: Bilgisayar engeli aşıldı ({str(e)}) ---")
+        print(f"--- LOKAL SİMÜLASYON DEVREDE: ({str(e)}) ---")
         
-        # Eğer initialize (form başlatma) isteğiyse sahte şık bir test formu üret kanka
         if 'initialize' in endpoint:
-            # Buraya yerleştirdiğimiz form, iyzico'nun resmi test kartlarıyla tıkır tıkır çalışır
             mock_form = f"""
             <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl text-left space-y-4 max-w-md mx-auto mt-4">
                 <p class="text-xs font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1">
@@ -90,7 +83,6 @@ def iyzico_raw_request(endpoint, request_data):
             """
             return {'status': 'success', 'checkoutFormContent': mock_form}
             
-        # Eğer ödeme onaylama isteğiyse direkt SUCCESS döndür geç kanka
         return {'status': 'success', 'paymentStatus': 'SUCCESS', 'paymentId': 'MOCK_PAY_123456'}
 
 # ==================== ANA SAYFA VE ARAMA MOTORU ====================
@@ -131,14 +123,11 @@ def product_detail(request, pk):
     can_review = False
     
     if request.user.is_authenticated:
-        has_purchased = OrderItem.objects.filter(
+        can_review = OrderItem.objects.filter(
             order__user=request.user,
             order__status__in=['Paid', 'Shipped', 'Completed'],
             product=product
         ).exists()
-        
-        if has_purchased:
-            can_review = True
 
     reviews = product.reviews.all()
 
@@ -148,14 +137,26 @@ def product_detail(request, pk):
         review_image = request.FILES.get('review_image')
         
         if comment:
-            Review.objects.create(
-                product=product,
-                user=request.user,
-                rating=int(rating),
-                comment=comment,
-                image=review_image
-            )
-            messages.success(request, "Thank you! Your review has been published successfully.")
+            # KANKA: Eğer kullanıcının bu ürüne zaten yorumu varsa onu GÜNCELLE, yoksa YENİAÇ
+            existing_review = Review.objects.filter(product=product, user=request.user).first()
+            
+            if existing_review:
+                existing_review.rating = int(rating)
+                existing_review.comment = comment
+                if review_image:
+                    existing_review.image = review_image
+                existing_review.save()
+                messages.success(request, "Your review has been updated successfully.")
+            else:
+                Review.objects.create(
+                    product=product,
+                    user=request.user,
+                    rating=int(rating),
+                    comment=comment,
+                    image=review_image
+                )
+                messages.success(request, "Thank you! Your review has been published successfully.")
+                
             return redirect('product_detail', pk=product.pk)
 
     context = {
@@ -176,7 +177,6 @@ def add_to_cart(request, product_id):
     
     variant = None
     if variant_id and variant_id != "0":
-        # KANKA DÜZELTME BURADA: price_impact yerine doğrudan 'id' üzerinden arama yapıyoruz!
         variant = ProductVariant.objects.filter(product=product, id=variant_id).first()
 
     cart, created = Cart.objects.get_or_create(user=request.user)
@@ -215,20 +215,32 @@ def update_cart_quantity(request, item_id):
                 cart_item.save()
             else:
                 cart_item.delete()
-                return JsonResponse({'deleted': True, 'cart_total': request.user.cart.get_total_price()})
+                return JsonResponse({
+                    'deleted': True, 
+                    'cart_subtotal': 0.00,
+                    'discount_amount': 0.00,
+                    'cart_total': 0.00
+                })
                 
+        cart = request.user.cart
         return JsonResponse({
-            'quantity': cart_item.quantity,
-            'item_total': cart_item.get_item_total(),
-            'cart_total': cart_item.cart.get_total_price()
+            'quantity': int(cart_item.quantity),
+            'item_total': float(cart_item.get_item_total()),
+            'cart_subtotal': float(cart.get_subtotal_price()),
+            'discount_amount': float(cart.get_discount_amount()),
+            'cart_total': float(cart.get_total_price())
         })
     return JsonResponse({'error': 'Geçersiz istek'}, status=400)
 
-
 def remove_from_cart(request, item_id):
+    """
+    KANKA: 404 hatasını önlemek için get_object_or_404 yerine esnek filter yapısı getirildi!
+    Çift tıklama olsa bile sistem artık çökmeyecek.
+    """
     if request.user.is_authenticated:
-        cart_item = get_object_or_404(CartItem, id=item_id, cart__user=request.user)
-        cart_item.delete()
+        cart_item = CartItem.objects.filter(id=item_id, cart__user=request.user).first()
+        if cart_item:
+            cart_item.delete()
     return redirect('cart_detail')
 
 # ==================== KULLANICI KAYIT / GİRİŞ SİSTEMİ ====================
@@ -240,7 +252,7 @@ def register_view(request):
         form = UserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            login(request, user)
+            auth_login(request, user)
             messages.success(request, "Harika! Kayıt işleminiz başarılı. İlk siparişinize özel %10 indirim kodunuz: EKMETAL10")
             return redirect('cart_detail')
     else:
@@ -278,27 +290,17 @@ def profile_view(request):
     profile, created = Profile.objects.get_or_create(user=request.user)
     
     if request.method == 'POST':
-        first_name = request.POST.get('first_name', '').strip()
-        last_name = request.POST.get('last_name', '').strip()
-        phone_code = request.POST.get('phone_code', '').strip()
-        phone_number = request.POST.get('phone_number', '').strip()
-        country = request.POST.get('country', '').strip()
-        state = request.POST.get('state', '').strip()
-        city = request.POST.get('city', '').strip()
-        zip_code = request.POST.get('zip_code', '').strip()
-        address_line = request.POST.get('address_line', '').strip()
-        
-        request.user.first_name = first_name
-        request.user.last_name = last_name
+        request.user.first_name = request.POST.get('first_name', '').strip()
+        request.user.last_name = request.POST.get('last_name', '').strip()
         request.user.save()
         
-        profile.phone_code = phone_code
-        profile.phone_number = phone_number
-        profile.country = country
-        profile.state = state
-        profile.city = city
-        profile.zip_code = zip_code
-        profile.address_line = address_line
+        profile.phone_code = request.POST.get('phone_code', '').strip()
+        profile.phone_number = request.POST.get('phone_number', '').strip()
+        profile.country = request.POST.get('country', '').strip()
+        profile.state = request.POST.get('state', '').strip()
+        profile.city = request.POST.get('city', '').strip()
+        profile.zip_code = request.POST.get('zip_code', '').strip()
+        profile.address_line = request.POST.get('address_line', '').strip()
         profile.save()
         
         messages.success(request, 'Your profile address details have been successfully updated!')
@@ -330,11 +332,11 @@ def checkout_view(request):
         
         order = Order.objects.create(
             user=request.user,
-            first_name=request.user.first_name if request.user.first_name else "Kadir",
-            last_name=request.user.last_name if request.user.last_name else "Altay",
-            phone_code=profile.phone_code if profile.phone_code else "+90",
-            phone_number=profile.phone_number if profile.phone_number else "5555555555",
-            country=profile.country if profile.country else "Türkiye",
+            first_name=request.user.first_name or "Kadir",
+            last_name=request.user.last_name or "Altay",
+            phone_code=profile.phone_code or "+90",
+            phone_number=profile.phone_number or "5555555555",
+            country=profile.country or "Türkiye",
             state=state,
             city=city,
             zip_code=zip_code,
@@ -356,7 +358,7 @@ def checkout_view(request):
             'id': str(request.user.id),
             'name': order.first_name,
             'surname': order.last_name,
-            'email': request.user.email if request.user.email else "kadiraltay90@gmail.com",
+            'email': request.user.email or "kadiraltay90@gmail.com",
             'identityNumber': '11111111111', 
             'registrationAddress': order.address_line,
             'city': order.city,
@@ -403,9 +405,6 @@ def checkout_view(request):
         
         try:
             response_data = iyzico_raw_request('/payment/checkoutform/initialize/auth/ecom', request_data)
-            
-            # KANKA KÖKTEN ÇÖZÜM: iyzico_payment.html sayfasını tamamen aradan çıkardık!
-            # Sistem direkt senin o jilet gibi payment_success.html sayfana yönlenecek.
             context = {
                 'payment_form_script': response_data.get('checkoutFormContent') if response_data else None,
                 'order': order
@@ -413,7 +412,7 @@ def checkout_view(request):
             return render(request, 'shop/payment_success.html', context)
                 
         except Exception as e:
-            messages.error(request, f"iyzico Bağlantı Hatası kanka: {str(e)}")
+            messages.error(request, f"iyzico Bağlantı Hatası: {str(e)}")
             order.delete()
             return redirect('checkout')
             
@@ -439,7 +438,6 @@ def send_invoice_pdf_email(order, request):
             
             subject = f"Your EK Metal Wall Art Invoice - Order #{order.id}"
             message = render_to_string('shop/invoice_email_text.html', {'order': order})
-            
             recipient_list = [order.user.email if order.user and order.user.email else request.user.email]
             
             email = EmailMessage(
@@ -448,7 +446,6 @@ def send_invoice_pdf_email(order, request):
                 settings.DEFAULT_FROM_EMAIL,
                 recipient_list
             )
-            
             email.attach(f"EKMetal_Invoice_{order.id}.pdf", pdf_data, "application/pdf")
             email.send(fail_silently=False)
             print(f"--- EMAIL SUCCESS: Invoice for Order #{order.id} sent successfully! ---")
@@ -476,14 +473,11 @@ def payment_success_view(request):
                 
                 if response_data.get('paymentStatus') == 'SUCCESS':
                     order.status = 'Paid'
-                    order.stripe_payment_intent = response_data.get('paymentId', '')
                     order.save()
-                    
                     send_invoice_pdf_email(order, request)
                     
                     try:
-                        cart = order.user.cart
-                        cart.items.all().delete()
+                        request.user.cart.items.all().delete()
                     except Cart.DoesNotExist:
                         pass
                 else:
@@ -504,30 +498,23 @@ def payment_success_view(request):
 def payment_cancel_view(request):
     return render(request, 'shop/payment_cancel.html')
 
-# ==================== MÜŞTERİ PANELİ PANORAMALARI ====================
+# ==================== MÜŞTERI PANELİ PANORAMALARI ====================
 @login_required(login_url='/login/')
 def my_orders_view(request):
     orders = request.user.orders.all().order_by('-created_at')
-    context = {'orders': orders}
-    return render(request, 'shop/my_orders.html', context)
+    return render(request, 'shop/my_orders.html', {'orders': orders})
 
 
 @login_required(login_url='/login/')
 def my_reviews_view(request):
-    user_reviews = request.user.reviews.all()
-    context = {
-        'reviews': user_reviews
-    }
-    return render(request, 'shop/my_reviews.html', context)
+    return render(request, 'shop/my_reviews.html', {'reviews': request.user.reviews.all()})
 
-
-#kupon
+# ==================== KUPON YÖNETİM SİSTEMİ ====================
 def apply_coupon(request):
     if request.method == "POST":
         code = request.POST.get('coupon_code', '').strip()
         cart = get_object_or_404(Cart, user=request.user)
         
-        # Kuponu veritabanında ara kanka
         coupon = Coupon.objects.filter(code__iexact=code, is_active=True).first()
         
         if coupon:
@@ -539,7 +526,7 @@ def apply_coupon(request):
             
     return redirect('cart_detail')
 
-# Kanka istersen kuponu iptal etmek için bir de temizleme fonksiyonu koyalım:
+
 def remove_coupon(request):
     cart = get_object_or_404(Cart, user=request.user)
     cart.coupon = None
