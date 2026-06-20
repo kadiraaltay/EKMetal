@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Favorites - EK Metal Wall Art</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans pt-24">
+
+    <nav class="fixed top-0 left-0 w-full bg-white shadow-sm z-50 px-6 py-4 flex justify-between items-center border-b border-gray-100">
+        <a href="/" class="text-gray-700 hover:text-amber-600 font-medium transition"><i class="fa-solid fa-arrow-left mr-2"></i> Back to Shop</a>
+        <a href="/" class="text-xl font-bold tracking-wider text-gray-800">EK <span class="text-amber-600">METAL</span></a>
+        <div></div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto px-4 py-8">
+        <h1 class="text-3xl font-black tracking-tight mb-8 flex items-center gap-3">
+            <i class="fa-solid fa-heart text-red-500"></i> My Favorites
+        </h1>
+
+        {% if favorites %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {% for fav in favorites %}
+                <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden transition hover:shadow-lg relative group">
+                    
+                    <a href="{% url 'product_detail' fav.product.id %}" class="block aspect-square overflow-hidden bg-gray-50">
+                        <img src="{{ fav.product.main_image.url }}" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                    </a>
+
+                    <div class="p-4 space-y-2">
+                        <span class="text-[10px] font-bold text-amber-600 uppercase">{{ fav.product.category.name }}</span>
+                        
+                        <a href="{% url 'product_detail' fav.product.id %}" class="block hover:text-amber-600 transition">
+                            <h3 class="text-sm font-bold text-gray-800 truncate">{{ fav.product.title }}</h3>
+                        </a>
+
+                        <div class="flex justify-between items-center pt-2">
+                            <span class="text-base font-black text-gray-900">${{ fav.product.price }}</span>
+                            
+                            <a href="{% url 'toggle_favorite' fav.product.id %}" class="text-gray-300 hover:text-red-500 transition text-sm p-1">
+                                <i class="fa-solid fa-heart-crack text-lg"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-12 text-center space-y-4">
+                <div class="w-16 h-16 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center text-2xl mx-auto border border-gray-100">
+                    <i class="fa-solid fa-heart"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-700">Your favorites list is empty</h3>
+                <p class="text-sm text-gray-400 max-w-sm mx-auto">Explore our unique metal wall art designs and save your favorites here.</p>
+                <div class="pt-2">
+                    <a href="/" class="inline-block bg-gray-900 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-amber-600 transition shadow-md">Explore Artworks</a>
+                </div>
+            </div>
+        {% endif %}
+    </main>
+
+</body>
+</html>

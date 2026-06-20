@@ -30,4 +30,7 @@ urlpatterns = [
     # Müşteri Panelleri
     path('my-orders/', views.my_orders_view, name='my_orders'),
     path('my-reviews/', views.my_reviews_view, name='my_reviews'),
+
+    path('my-favorites/', views.my_favorites_view, name='my_favorites'),
+    path('favorite/toggle/<int:product_id>/', views.toggle_favorite, name='toggle_favorite'),
 ]

@@ -11,7 +11,7 @@ SECRET_KEY = 'django-insecure-!i$f_x-b-n#=(&1wacz+d9w$-1&kf2cbx8ou4b*o@4amg&+l6h
 DEBUG = True
 
 # Lokalde sorunsuz çalışması için gerekli hostlar
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.onrender.com']
 
 
 # Application definition
@@ -28,6 +28,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # KANKA: Render'da CSS ve JS'ler patlamasın diye tam buraya mühürledik!
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -91,7 +92,7 @@ USE_TZ = True
 
 
 # ==============================================================================
-# STATİK VE MEDYA DOSYA AYARLARI (ORİJİNAL YAPIDA TEMİZLENDİ KANKA)
+# STATİK VE MEDYA DOSYA AYARLARI (RENDER VE WHITENOISE UYUMLU DURUMA GETİRİLDİ KANKA)
 # ==============================================================================
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -100,6 +101,16 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
+
+# KANKA: Render canlı ortamında statik dosyaları sıkıştırıp cache'lemesi için WhiteNoise motorunu bağlıyoruz
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
@@ -129,6 +140,6 @@ DEFAULT_FROM_EMAIL = f"EK Metal Wall Art <{EMAIL_HOST_USER}>"
 # ==============================================================================
 IYZICO_API_KEY = 'sandbox-txt-AokvB32gYfhU7K8L9M1N2O3P4'
 IYZICO_SECRET_KEY = 'sandbox-txt-ZxpQ98rStUvW65xY43zQ21w'
-IYZICO_BASE_URL = 'https://api.iyzico.com'
+IYZICO_BASE_URL = 'https://api.api.iyzico.com'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

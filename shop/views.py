@@ -18,6 +18,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from .models import Category, Product, ProductImage, ProductVariant, Order, OrderItem, Review, Favorite
 
 from .models import Product, Category, Cart, CartItem, ProductVariant, Profile, Order, OrderItem, Review, Coupon
 
@@ -533,3 +534,26 @@ def remove_coupon(request):
     cart.save()
     messages.info(request, "Kupon kaldırıldı.")
     return redirect('cart_detail')
+
+
+@login_required(login_url='/login/')
+def my_favorites_view(request):
+    """Kanka: Üyenin favorilediği ürünleri listelediği sayfa view'ı"""
+    favorites = request.user.favorites.all().order_by('-created_at')
+    return render(request, 'shop/my_favorites.html', {'favorites': favorites})
+
+@login_required(login_url='/login/')
+def toggle_favorite(request, product_id):
+    """Kanka: Ürün detay sayfasında butona basınca favoriye ekler veya zaten varsa favoriden çıkartır"""
+    product = get_object_or_404(Product, id=product_id)
+    fav_exists = Favorite.objects.filter(user=request.user, product=product).first()
+    
+    if fav_exists:
+        fav_exists.delete()
+        messages.success(request, "Product removed from your favorites.")
+    else:
+        Favorite.objects.create(user=request.user, product=product)
+        messages.success(request, "Product added to your favorites.")
+        
+    # Geldikleri sayfaya (Ürün detayına veya favori listesine) geri postalar kanka
+    return redirect(request.META.get('HTTP_REFERER', 'my_favorites'))

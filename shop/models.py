@@ -215,3 +215,15 @@ def create_or_save_user_profile(sender, instance, created, **kwargs):
     profile, _ = Profile.objects.get_or_create(user=instance)
     if not created:
         profile.save()
+
+
+class Favorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites', verbose_name="User")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='favorited_by', verbose_name="Product")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'product') # Kanka bir üye bir ürünü sadece 1 kez favorileyebilsin diye
+
+    def __str__(self):
+        return f"{self.user.username} - {self.product.title}"
