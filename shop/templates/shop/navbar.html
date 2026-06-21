@@ -1,53 +1,60 @@
-<nav class="fixed top-9 left-0 w-full bg-white shadow-md z-50 px-6 py-4 flex justify-between items-center border-b border-gray-100">
-    <a href="/" class="text-xl font-bold tracking-wider text-gray-800">EK<span class="text-amber-600">METAL</span></a>
+<div class="fixed top-0 left-0 w-full z-50 shadow-md">
     
-    <div class="space-x-4 md:space-x-6 flex items-center">
-        <form action="" method="GET" class="flex items-center bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200 focus-within:border-amber-600 transition">
-            <input type="text" name="q" value="{{ current_query|default:'' }}" placeholder="Search metal art..." class="bg-transparent text-xs md:text-sm focus:outline-none w-24 sm:w-36 md:w-48 text-gray-800">
-            <button type="submit" class="text-gray-500 hover:text-amber-600 transition">
-                <i class="fa-solid fa-magnifying-glass text-xs md:text-sm"></i>
-            </button>
-        </form>
-
-        <a href="{% url 'cart_detail' %}" class="hover:text-amber-600 transition relative text-gray-800">
-            <i class="fa-solid fa-basket-shopping text-lg"></i>
-            <span class="absolute -top-2 -right-2 bg-amber-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                {{ cart_items_total }}
-            </span>
-        </a>
-        
-        {% if request.user.is_authenticated %}
-            <div class="relative inline-block text-left">
-                <button onclick="toggleGlobalNavbarMenu(event)" type="button" id="global-nav-btn" class="flex items-center gap-1.5 text-xs md:text-sm font-bold text-gray-700 hover:text-amber-600 transition focus:outline-none cursor-pointer">
-                    <i class="fa-solid fa-user text-amber-600"></i>
-                    <span>Hi, {{ request.user.username }}</span>
-                    <i class="fa-solid fa-chevron-down text-[10px] ml-0.5 text-gray-400"></i>
-                </button>
-
-                <div id="global-navbar-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-100 hidden">
-                    <a href="{% url 'profile' %}" class="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-amber-600 transition">
-                       <i class="fa-solid fa-id-card text-gray-400 w-4"></i> My Profile
-                    </a>
-                    <a href="{% url 'my_orders' %}" class="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-amber-600 transition">
-                        <i class="fa-solid fa-box-open text-gray-400 w-4"></i> My Orders
-                    </a>
-                    <a href="{% url 'my_favorites' %}" class="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-amber-600 transition">
-                        <i class="fa-solid fa-heart text-red-500 w-4"></i> My Favorites
-                    </a>
-                    <a href="{% url 'my_reviews' %}" class="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-amber-600 transition">
-                        <i class="fa-solid fa-comments text-gray-400 w-4"></i> My Reviews
-                    </a>
-                    <hr class="border-gray-100 my-1">
-                    <a href="{% url 'logout' %}" class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition">
-                        <i class="fa-solid fa-arrow-right-from-bracket text-red-400 w-4"></i> Logout
-                    </a>
-                </div>
-            </div>
-        {% else %}
-            <a href="{% url 'login' %}" class="bg-gray-900 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-amber-600 transition">Login</a>
-        {% endif %}
+    <div class="w-full bg-[#e67e22] text-white text-center py-2 text-[11px] md:text-xs font-bold tracking-wide">
+        🚨 Don't Miss Out! Sign up now and complete your cart with a 10% discount code! <a href="#" class="underline ml-1">Sign Up Now</a>
     </div>
-</nav>
+
+    <nav class="w-full bg-white px-6 py-4 flex justify-between items-center border-b border-gray-100">
+        <a href="/" class="text-xl font-bold tracking-wider text-gray-800">EK<span class="text-amber-600">METAL</span></a>
+        
+        <div class="space-x-4 md:space-x-6 flex items-center">
+            <form action="" method="GET" class="flex items-center bg-gray-50 rounded-lg px-3 py-1.5 border border-gray-200 focus-within:border-amber-600 transition">
+                <input type="text" name="q" value="{{ current_query|default:'' }}" placeholder="Search metal art..." class="bg-transparent text-xs md:text-sm focus:outline-none w-24 sm:w-36 md:w-48 text-gray-800">
+                <button type="submit" class="text-gray-500 hover:text-amber-600 transition">
+                    <i class="fa-solid fa-magnifying-glass text-xs md:text-sm"></i>
+                </button>
+            </form>
+
+            <a href="{% url 'cart_detail' %}" class="hover:text-amber-600 transition relative text-gray-800">
+                <i class="fa-solid fa-basket-shopping text-lg"></i>
+                <span class="absolute -top-2 -right-2 bg-amber-600 text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                    {{ cart_items_total }}
+                </span>
+            </a>
+            
+            {% if request.user.is_authenticated %}
+                <div class="relative inline-block text-left">
+                    <button onclick="toggleGlobalNavbarMenu(event)" type="button" id="global-nav-btn" class="flex items-center gap-1.5 text-xs md:text-sm font-bold text-gray-700 hover:text-amber-600 transition focus:outline-none cursor-pointer">
+                        <i class="fa-solid fa-user text-amber-600"></i>
+                        <span>Hi, {{ request.user.username }}</span>
+                        <i class="fa-solid fa-chevron-down text-[10px] ml-0.5 text-gray-400"></i>
+                    </button>
+
+                    <div id="global-navbar-dropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-gray-100 py-1.5 z-100 hidden">
+                        <a href="{% url 'profile' %}" class="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-amber-600 transition">
+                           <i class="fa-solid fa-id-card text-gray-400 w-4"></i> My Profile
+                        </a>
+                        <a href="{% url 'my_orders' %}" class="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-amber-600 transition">
+                            <i class="fa-solid fa-box-open text-gray-400 w-4"></i> My Orders
+                        </a>
+                        <a href="{% url 'my_favorites' %}" class="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-amber-600 transition">
+                            <i class="fa-solid fa-heart text-red-500 w-4"></i> My Favorites
+                        </a>
+                        <a href="{% url 'my_reviews' %}" class="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-amber-600 transition">
+                            <i class="fa-solid fa-comments text-gray-400 w-4"></i> My Reviews
+                        </a>
+                        <hr class="border-gray-100 my-1">
+                        <a href="{% url 'logout' %}" class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 transition">
+                            <i class="fa-solid fa-arrow-right-from-bracket text-red-400 w-4"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <a href="{% url 'login' %}" class="bg-gray-900 text-white px-4 py-1.5 rounded-lg text-sm hover:bg-amber-600 transition">Login</a>
+            {% endif %}
+        </div>
+    </nav>
+</div>
 
 <script>
     function toggleGlobalNavbarMenu(event) {
@@ -64,11 +71,8 @@
         }
     });
 
-    // KANKA: Tarayıcıda geri tuşuna basıldığında önbellekten (cache) gelen eski sepet sayısını anlık uçuran motor
     window.addEventListener('pageshow', function(event) {
-        // Eğer sayfa tarayıcının geçmiş hafızasından (geri butonuyla) yüklendiyse
         if (event.persisted || (window.performance && window.performance.navigation.type === 2)) {
-            // En temiz ve garantili yol sayfayı arkada çaktırmadan tazelemektir kanka
             window.location.reload();
         }
     });

@@ -9,11 +9,7 @@
 </head>
 <body class="bg-gray-50 text-gray-900 font-sans pt-24">
 
-    <nav class="fixed top-0 left-0 w-full bg-white shadow-sm z-50 px-6 py-4 flex justify-between items-center">
-        <a href="/" class="text-gray-700 hover:text-amber-600 font-medium transition"><i class="fa-solid fa-arrow-left mr-2"></i> Back to Shop</a>
-        <a href="/" class="text-xl font-bold tracking-wider text-gray-800">EK<span class="text-amber-600">METAL</span></a>
-        <div></div>
-    </nav>
+    {% include 'shop/navbar.html' %}
 
     <main class="max-w-3xl mx-auto px-4 py-8">
         <div class="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
@@ -119,7 +115,6 @@
             }
         }
         
-        // Sihirli Dokunuş: Sayfa telefonda veya bilgisayarda ilk yüklendiği an verileri hazırla kanka
         document.addEventListener("DOMContentLoaded", function() {
             updatePhoneCode();
         });
