@@ -42,7 +42,7 @@ admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 
 # ==========================================
-# 3. SHOP & ORDER AYARLARI (BEDAVA DESTEKLİ MOTOR)
+# 3. SHOP & ORDER AYARLARI (PYTHONANYWHERE UYUMLU)
 # ==========================================
 
 @admin.register(Category)
@@ -60,22 +60,22 @@ class ProductAdmin(admin.ModelAdmin):
         storage = messages.get_messages(request)
         for _ in storage: pass  # Eski mesajları temizle
         
-        # Kutunun içinde 33 takılı kalmasın diye güncel yüzdeyi çekiyoruz kanka
         current_percent = 0
         first_product = Product.objects.all().first()
         
-        # Eğer indirimli fiyat None değilse ve fiyata eşit değilse indirim yüzdesini hesapla
         if first_product and first_product.discount_price is not None:
-            # discount_price 0.00 olduğunda (%100 indirim) percent 100 kalacak kanka
             if first_product.discount_price == 0:
                 current_percent = 100
             else:
                 current_percent = first_product.get_discount_percent()
 
+        # ⚡ KANKA: PythonAnywhere'de CSRF'e takılmamak için token'ı 'request.META' yerine direkt 'request.COOKIES' üzerinden garantiye alıyoruz
+        csrf_token = request.COOKIES.get('csrftoken', '')
+        
         custom_form = mark_safe(
             '<div style="background: #2c3e50; padding: 15px; border-radius: 6px; margin-bottom: 15px; border-left: 5px solid #e67e22;">'
                 '<form method="POST" action="apply-percent-discount/" style="display: flex; align-items: center; gap: 15px;">'
-                    f'<input type="hidden" name="csrfmiddlewaretoken" value="{request.META.get("CSRF_COOKIE", "")}">'
+                    f'<input type="hidden" name="csrfmiddlewaretoken" value="{csrf_token}">'
                     '<span style="color: #fff; font-weight: bold; font-size: 14px;">⚡ TÜM ÜRÜNLERE TOPLU İNDİRİM:</span>'
                     '<span style="color: #eee;">İndirim Oranı (%):</span>'
                     f'<input type="number" name="discount_percent" value="{current_percent}" min="0" max="100" style="padding: 6px; width: 70px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold; text-align: center; color: #000;" required>'
@@ -94,7 +94,6 @@ class ProductAdmin(admin.ModelAdmin):
         ]
         return custom_urls + urls
 
-    # 🚀 KANKA: 100 yazınca bedava yapan, 0 yazınca indirim kaldıran motor kanka
     def apply_percent_discount_view(self, request):
         if request.method == 'POST':
             try:
@@ -106,13 +105,10 @@ class ProductAdmin(admin.ModelAdmin):
                 updated_count = 0
                 
                 for product in products:
-                    # ⚡ KANKA: Sadece 0 yazınca indirim tamamen kalkar
                     if percent == 0:
                         product.discount_price = None
-                    # ⚡ KANKA: 100 yazınca indirimli fiyatı kuruşu kuruşuna 0 yapar (Bedava kanka!)
                     elif percent == 100:
                         product.discount_price = 0.00
-                    # 1-99 arası ise normal yüzde indirimi basar
                     else:
                         discount_amount = (product.price * percent) / 100
                         product.discount_price = product.price - discount_amount
