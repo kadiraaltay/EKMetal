@@ -74,14 +74,17 @@
                     <a href="{% url 'product_detail' product.pk %}">
                         <h3 class="font-bold text-gray-800 text-lg truncate hover:text-amber-600 transition">{{ product.title }}</h3>
                     </a>
-                    <div class="flex items-center gap-2">
+                    
+                    <div class="flex items-center gap-2 pt-1">
                         {% if product.discount_price %}
-                        <span class="text-xl font-black text-gray-950">$ {{ product.discount_price }}</span>
-                        <span class="text-sm text-gray-400 line-through">$ {{ product.price }}</span>
+                            <span style="color: #e67e22 !important; font-weight: 900 !important; font-size: 1.25rem !important;">$ {{ product.discount_price }}</span>
+                            <span style="color: #94a3b8 !important; text-decoration: line-through !important; font-size: 0.875rem !important;">$ {{ product.price }}</span>
+                            <span style="background: #fef3c7 !important; color: #d97706 !important; font-size: 0.75rem !important; padding: 2px 6px !important; border-radius: 4px !important; font-weight: 700 !important;">-%{{ product.get_discount_percent }}</span>
                         {% else %}
-                        <span class="text-xl font-black text-gray-950">$ {{ product.price }}</span>
+                            <span style="color: #0f172a !important; font-weight: 900 !important; font-size: 1.25rem !important;">$ {{ product.price }}</span>
                         {% endif %}
                     </div>
+                    
                     <a href="{% url 'product_detail' product.pk %}" class="w-full mt-4 bg-gray-900 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-amber-600 transition flex items-center justify-center gap-2 block text-center">
                         <i class="fa-solid fa-magnifying-glass-plus"></i> View Options
                     </a>

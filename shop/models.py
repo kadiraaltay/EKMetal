@@ -48,6 +48,7 @@ class Product(models.Model):
     stock = models.IntegerField(default=0, verbose_name="Stock Quantity")
     main_image = models.ImageField(upload_to='products/main/', verbose_name="Main Image")
     video = models.FileField(upload_to='products/videos/', null=True, blank=True, verbose_name="Product Video (Optional)")
+    seo_keywords = models.CharField(max_length=500, blank=True, null=True, verbose_name="SEO Anahtar Kelimeler")
     is_active = models.BooleanField(default=True, verbose_name="Is Active?")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
 
@@ -57,6 +58,13 @@ class Product(models.Model):
 
     def __str__(self):
         return self.title
+
+    # ⚡ KANKA: Ürünün indirim yüzdesini dinamik hesaplayan fonksiyon
+    def get_discount_percent(self):
+        if self.discount_price and self.price > 0:
+            percent = ((self.price - self.discount_price) / self.price) * 100
+            return int(round(percent))
+        return 0
 
 
 class ProductImage(models.Model):
@@ -79,6 +87,28 @@ class ProductVariant(models.Model):
 
     def __str__(self):
         return f"{self.product.title} - {self.size} (+${self.price_impact})"
+
+    # ⚡ KANKA: İstediğin gibi, ürünün diğer tüm ölçülerine (boyut varyantlarına) indirimi otomatik yansıtan canavar fonksiyon
+    def get_variant_prices(self):
+        discount_percent = self.product.get_discount_percent()
+        original_variant_price = self.price_impact
+        
+        if discount_percent > 0:
+            # Varyantın kendi fiyatına da aynı indirim oranını çakıyoruz kanka
+            discount_amount = (original_variant_price * discount_percent) / 100
+            discounted_variant_price = original_variant_price - discount_amount
+            return {
+                'is_discounted': True,
+                'original': original_variant_price,
+                'discounted': discounted_variant_price,
+                'percent': discount_percent
+            }
+        return {
+            'is_discounted': False,
+            'original': original_variant_price,
+            'discounted': original_variant_price,
+            'percent': 0
+        }
 
 
 # ==========================================
@@ -118,15 +148,11 @@ class CartItem(models.Model):
         return f"{self.product.title} ({self.quantity} Pcs)"
 
     def get_item_total(self):
-        """
-        KANKA YENİ MANTIK:
-        Eğer bir varyant (boyut) seçildiyse, taban fiyat tamamen devre dışı kalır ve 
-        direkt varyantın kendi fiyatı (price_impact alanına yazdığın net rakam) baz alınır!
-        """
+        # ⚡ KANKA: Sepette de indirimli varyant fiyatlarının geçerli olmasını sağladık
         if self.variant:
-            return self.variant.price_impact * self.quantity
+            prices = self.variant.get_variant_prices()
+            return prices['discounted'] * self.quantity
             
-        # Eğer varyant seçilmediyse standart taban fiyatı kullanır
         base_price = self.product.discount_price if self.product.discount_price else self.product.price
         return base_price * self.quantity
 
@@ -211,7 +237,6 @@ class Profile(models.Model):
 
 @receiver(post_save, sender=User)
 def create_or_save_user_profile(sender, instance, created, **kwargs):
-    """Kanka: İki ayrı fonksiyon yerine tek bir sinyal altında daha temiz ve optimize hale getirildi."""
     profile, _ = Profile.objects.get_or_create(user=instance)
     if not created:
         profile.save()
@@ -223,7 +248,7 @@ class Favorite(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('user', 'product') # Kanka bir üye bir ürünü sadece 1 kez favorileyebilsin diye
+        unique_together = ('user', 'product')
 
     def __str__(self):
         return f"{self.user.username} - {self.product.title}"
