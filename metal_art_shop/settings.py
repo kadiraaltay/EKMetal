@@ -11,7 +11,7 @@ SECRET_KEY = 'django-insecure-!i$f_x-b-n#=(&1wacz+d9w$-1&kf2cbx8ou4b*o@4amg&+l6h
 DEBUG = True
 
 # Lokalde sorunsuz çalışması için gerekli hostlar
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.onrender.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.onrender.com', 'kadiraltay.pythonanywhere.com']
 
 
 # Application definition
