@@ -1,0 +1,44 @@
+{% extends 'shop/navbar.html' %} {# Kanka senin ana şablonun/navbarın hangisiyse ona göre extends et #}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <!-- Ödeme Kartı -->
+            <div class="card shadow-lg border-0" style="background: #1a252f; border-radius: 15px; overflow: hidden;">
+                <div class="card-header border-0 text-center py-4" style="background: #2c3e50;">
+                    <h3 class="card-title mb-0 text-white font-weight-bold">
+                        <i class="fa-solid fa-shield-halved text-success mr-2"></i> PayTR Güvenli Ödeme Adımı
+                    </h3>
+                    <p class="text-muted small mb-0 mt-1" style="color: #cbd5e1 !important;">
+                        Siparişiniz için kart bilgilerinizi aşağıdaki güvenli alana girerek ödemeyi tamamlayabilirsiniz kanka.
+                    </p>
+                </div>
+                
+                <div class="card-body p-4 bg-white">
+                    <!-- ⚡ PAYTR IFRAME MOTORU BURAYA ENJEKTE OLUYOR kanka -->
+                    <script src="https://www.paytr.com/js/iframeResizer.min.js"></script>
+                    
+                    <iframe src="https://www.paytr.com/odeme/guvenli/{{ iframe_token }}" 
+                            id="paytriframe" 
+                            frameborder="0" 
+                            scrolling="no" 
+                            style="width: 100%; min-height: 650px; border: none; border-radius: 8px;">
+                    </iframe>
+                    
+                    <script>
+                        // PayTR ekranının yüksekliğini kullanıcının ekranına göre dinamik boyutlandıran sihirli kod
+                        iFrameResize({}, '#paytriframe');
+                    </script>
+                </div>
+                
+                <div class="card-footer text-center py-3" style="background: #f8f9fa; border-top: 1px solid #e9ecef;">
+                    <small class="text-muted">
+                        <i class="fa-solid fa-lock text-muted mr-1"></i> 256-Bit SSL Sertifikası ile tüm işlemleriniz şifrelenmektedir.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

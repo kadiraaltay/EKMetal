@@ -22,15 +22,20 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('profile/', views.profile_view, name='profile'),
 
-    # Ödeme ve Sipariş Tamamlama (iyzico)
-    path('checkout/', views.checkout_view, name='checkout'),
+    # 🛠️ GÜNCELLENEN KISIM: Ödeme ve Sipariş Tamamlama (PayTR)
+    path('checkout/', views.paytr_checkout_view, name='checkout'),
+    path('paytr-callback/', views.paytr_callback_view, name='paytr_callback'),
     path('payment-success/', views.payment_success_view, name='payment_success'),
     path('payment-cancel/', views.payment_cancel_view, name='payment_cancel'),
 
     # Müşteri Panelleri
     path('my-orders/', views.my_orders_view, name='my_orders'),
     path('my-reviews/', views.my_reviews_view, name='my_reviews'),
-
     path('my-favorites/', views.my_favorites_view, name='my_favorites'),
     path('favorite/toggle/<int:product_id>/', views.toggle_favorite, name='toggle_favorite'),
+
+    # shop/urls.py içine eklenecekler:
+    path('privacy-policy/', views.privacy_policy_view, name='privacy_policy'),
+    path('terms-of-sale/', views.terms_of_sale_view, name='terms_of_sale'),
+    path('return-policy/', views.return_policy_view, name='return_policy'),
 ]

@@ -15,76 +15,16 @@ from django.db.models import Q
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login as auth_login, logout as auth_logout, authenticate
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-from .models import Category, Product, ProductImage, ProductVariant, Order, OrderItem, Review, Favorite
+from .models import Category, Product, ProductImage, ProductVariant, Order, OrderItem, Review, Favorite, Cart, CartItem, Profile, Coupon
 
-from .models import Product, Category, Cart, CartItem, ProductVariant, Profile, Order, OrderItem, Review, Coupon
-
-# ==================== IYZICO API MOTORU (KARARLI MOCK SİMÜLASYONLU) ====================
-def iyzico_raw_request(endpoint, request_data):
-    """
-    İnternet/DNS blokajlarını aşmak için lokalde simülasyon yapar, 
-    canlı sunucuda ise gerçek iyzico API'sine bağlanır kanka!
-    """
-    try:
-        api_key = getattr(settings, 'IYZICO_API_KEY', 'sandbox-test-key')
-        secret_key = getattr(settings, 'IYZICO_SECRET_KEY', 'sandbox-test-secret')
-        base_url = 'https://api.iyzico.com'
-        
-        url = f"{base_url}{endpoint}"
-        random_str = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-        
-        payload = random_str + endpoint + json.dumps(request_data)
-        hash_str = hmac.new(secret_key.encode('utf-8'), payload.encode('utf-8'), hashlib.sha256).digest()
-        hash_base64 = base64.b64encode(hash_str).decode('utf-8')
-        
-        authorization = f"IYZWS {api_key}:{hash_base64}"
-        
-        headers = {
-            'Authorization': authorization,
-            'x-iyzi-rnd': random_str,
-            'Content-Type': 'application/json'
-        }
-        
-        response = requests.post(url, json=request_data, headers=headers, timeout=3)
-        return response.json()
-        
-    except Exception as e:
-        print(f"--- LOKAL SİMÜLASYON DEVREDE: ({str(e)}) ---")
-        
-        if 'initialize' in endpoint:
-            mock_form = f"""
-            <div class="p-4 bg-gray-50 border border-gray-200 rounded-xl text-left space-y-4 max-w-md mx-auto mt-4">
-                <p class="text-xs font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1">
-                    <i class="fa-solid fa-flask"></i> iyzico Local Test Simulator Enabled
-                </p>
-                <form action="/payment-success/?order_id={request_data.get('conversationId')}" method="POST" class="space-y-3">
-                    <input type="hidden" name="token" value="MOCK_TOKEN_KADIR_ALTAY">
-                    <div>
-                        <label class="text-[10px] font-black text-gray-400 uppercase">Test Card Number</label>
-                        <input type="text" class="w-full text-xs p-2 bg-white border rounded-lg font-mono" value="4355 0843 3535 3535" readonly>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label class="text-[10px] font-black text-gray-400 uppercase">Expiry</label>
-                            <input type="text" class="w-full text-xs p-2 bg-white border rounded-lg font-mono" value="12 / 2029" readonly>
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black text-gray-400 uppercase">CVV</label>
-                            <input type="text" class="w-full text-xs p-2 bg-white border rounded-lg font-mono" value="123" readonly>
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-4 rounded-xl text-xs transition flex items-center justify-center gap-2 cursor-pointer mt-2">
-                        <i class="fa-solid fa-credit-card"></i> Complete Test Payment (${request_data.get('price')})
-                    </button>
-                </form>
-            </div>
-            """
-            return {'status': 'success', 'checkoutFormContent': mock_form}
-            
-        return {'status': 'success', 'paymentStatus': 'SUCCESS', 'paymentId': 'MOCK_PAY_123456'}
+# ==================== PAYTR API MOTORU (TEST MODU AKTİF) ====================
+# PayTR'a bireysel başvuru yapınca panelinden alacağın canlı keyleri settings.py'a ekleyebilirsin kanka.
+PAYTR_MERCHANT_ID = getattr(settings, 'PAYTR_MERCHANT_ID', '123456')
+PAYTR_MERCHANT_KEY = getattr(settings, 'PAYTR_MERCHANT_KEY', 'XXXXXX_TEST_KEY_XXXXXX')
+PAYTR_MERCHANT_SALT = getattr(settings, 'PAYTR_MERCHANT_SALT', 'XXXXXX_TEST_SALT_XXXXXX')
 
 # ==================== ANA SAYFA VE ARAMA MOTORU ====================
 def index(request):
@@ -138,7 +78,6 @@ def product_detail(request, pk):
         review_image = request.FILES.get('review_image')
         
         if comment:
-            # KANKA: Eğer kullanıcının bu ürüne zaten yorumu varsa onu GÜNCELLE, yoksa YENİAÇ
             existing_review = Review.objects.filter(product=product, user=request.user).first()
             
             if existing_review:
@@ -234,10 +173,6 @@ def update_cart_quantity(request, item_id):
     return JsonResponse({'error': 'Geçersiz istek'}, status=400)
 
 def remove_from_cart(request, item_id):
-    """
-    KANKA: 404 hatasını önlemek için get_object_or_404 yerine esnek filter yapısı getirildi!
-    Çift tıklama olsa bile sistem artık çökmeyecek.
-    """
     if request.user.is_authenticated:
         cart_item = CartItem.objects.filter(id=item_id, cart__user=request.user).first()
         if cart_item:
@@ -309,9 +244,9 @@ def profile_view(request):
         
     return render(request, 'shop/profile.html', {'profile': profile})
 
-# ==================== IYZICO CHECKOUT MANAGEMENT ====================
+# ==================== PAYTR CHECKOUT MANAGEMENT ====================
 @login_required(login_url='/login/')
-def checkout_view(request):
+def paytr_checkout_view(request):
     try:
         cart = request.user.cart
     except Cart.DoesNotExist:
@@ -331,6 +266,7 @@ def checkout_view(request):
         city = request.POST.get('city')
         zip_code = request.POST.get('zip_code')
         
+        # 1. Sipariş kaydını oluşturuyoruz kanka
         order = Order.objects.create(
             user=request.user,
             first_name=request.user.first_name or "Kadir",
@@ -352,68 +288,82 @@ def checkout_view(request):
                 product=item.product,
                 variant=item.variant,
                 quantity=item.quantity,
-                price=item.variant.price_impact if item.variant else item.product.price
+                price=item.variant.price_impact if item.variant else (item.product.discount_price if item.product.discount_price else item.product.price)
             )
-            
-        buyer = {
-            'id': str(request.user.id),
-            'name': order.first_name,
-            'surname': order.last_name,
-            'email': request.user.email or "kadiraltay90@gmail.com",
-            'identityNumber': '11111111111', 
-            'registrationAddress': order.address_line,
-            'city': order.city,
-            'country': order.country,
-            'zipCode': order.zip_code,
-            'ip': '127.0.0.1'
-        }
+
+        # 2. PayTR Parametrelerini Hazırlıyoruz
+        merchant_oid = str(order.id)
+        user_ip = request.META.get('REMOTE_ADDR', '127.0.0.1')
+        user_email = request.user.email or "kadiraltay90@gmail.com"
         
-        address = {
-            'contactName': f"{order.first_name} {order.last_name}",
-            'city': order.city,
-            'country': order.country,
-            'address': order.address_line,
-            'zipCode': order.zip_code
-        }
+        # PayTR tutarı kuruş cinsinden tamsayı olarak ister kanka
+        payment_amount = int(total_price * 100)
         
+        user_name = f"{order.first_name} {order.last_name}"
+        user_address = f"{order.address_line} {order.city} {order.state} {order.zip_code}"
+        user_phone = order.phone_number
+        
+        # Başarı ve Hata sayfaları yönlendirme linkleri
+        merchant_ok_url = request.build_absolute_uri('/payment-success/') + f'?order_id={order.id}'
+        merchant_fail_url = request.build_absolute_uri('/payment-cancel/')
+        
+        # Sepet içeriğini PayTR formatına (JSON Array) çeviriyoruz
         basket_items = []
         for item in cart.items.all():
             item_price = str(item.variant.price_impact if item.variant else (item.product.discount_price if item.product.discount_price else item.product.price))
-            basket_items.append({
-                'id': str(item.product.id),
-                'name': item.product.title[:20],
-                'category1': item.product.category.name,
-                'itemType': 'PHYSICAL',
-                'price': item_price
-            })
+            basket_items.append([item.product.title[:20], item_price, item.quantity])
+            
+        user_basket = base64.b64encode(json.dumps(basket_items).encode('utf-8')).decode('utf-8')
+        
+        # Taksit ve Döviz Konfigürasyonları
+        no_installment = '1'  # 1: Taksit yapılmasın (Bireysel POS için ideal kanka)
+        max_installments = '1'
+        currency = 'TL'       # İstek türü varsayılan TL (Yurtdışı kartları da bu tutardan çevrilir kanka)
+        test_mode = '1'       # 1: Test ortamı aktif. Canlıya geçince '0' yaparsın.
 
-        callback_url = request.build_absolute_uri('/payment-success/') + f'?order_id={order.id}'
+        # 3. PayTR Token Şifreleme (SHA256 Hash Yapısı kanka)
+        hash_str = PAYTR_MERCHANT_ID + user_ip + merchant_oid + user_email + str(payment_amount) + user_basket + no_installment + max_installments + currency + test_mode
+        paytr_token = hmac.new(PAYTR_MERCHANT_KEY.encode('utf-8'), (hash_str + PAYTR_MERCHANT_SALT).encode('utf-8'), hashlib.sha256).digest()
+        token = base64.b64encode(paytr_token).decode('utf-8')
 
-        request_data = {
-            'locale': 'tr',
-            'conversationId': str(order.id),
-            'price': str(total_price),
-            'paidPrice': str(total_price),
-            'currency': 'USD',
-            'basketId': f"BASKET_{order.id}",
-            'paymentGroup': 'PRODUCT',
-            'callbackUrl': callback_url,
-            'buyer': buyer,
-            'shippingAddress': address,
-            'billingAddress': address,
-            'basketItems': basket_items
+        params = {
+            'merchant_id': PAYTR_MERCHANT_ID,
+            'user_ip': user_ip,
+            'merchant_oid': merchant_oid,
+            'email': user_email,
+            'payment_amount': payment_amount,
+            'paytr_token': token,
+            'user_basket': user_basket,
+            'user_name': user_name,
+            'user_address': user_address,
+            'user_phone': user_phone,
+            'merchant_ok_url': merchant_ok_url,
+            'merchant_fail_url': merchant_fail_url,
+            'no_installment': no_installment,
+            'max_installments': max_installments,
+            'currency': currency,
+            'test_mode': test_mode
         }
         
         try:
-            response_data = iyzico_raw_request('/payment/checkoutform/initialize/auth/ecom', request_data)
-            context = {
-                'payment_form_script': response_data.get('checkoutFormContent') if response_data else None,
-                'order': order
-            }
-            return render(request, 'shop/payment_success.html', context)
+            # PayTR Sunucusundan iFrame Ödeme token'ını talep ediyoruz
+            response = requests.post('https://www.paytr.com/odeme/api/get-token', data=params, timeout=5)
+            res_json = response.json()
+            
+            if res_json['status'] == 'success':
+                context = {
+                    'iframe_token': res_json['token'],
+                    'order': order
+                }
+                # Müşteriyi PayTR iFrame ödeme şablonuna paslıyoruz kanka
+                return render(request, 'shop/paytr_checkout.html', context)
+            else:
+                messages.error(request, f"PayTR Token Hatası: {res_json.get('reason')}")
+                order.delete()
+                return redirect('checkout')
                 
         except Exception as e:
-            messages.error(request, f"iyzico Bağlantı Hatası: {str(e)}")
+            messages.error(request, f"PayTR Bağlantı Hatası: {str(e)}")
             order.delete()
             return redirect('checkout')
             
@@ -454,45 +404,57 @@ def send_invoice_pdf_email(order, request):
     except Exception as email_error:
         print(f"--- EMAIL ERROR: Invoice email could not be sent. Details: {email_error} ---")
 
-# ==================== IYZICO KONTROL VE BAŞARI SAYFASI ====================
+# ==================== PAYTR GÜVENLİ BİLDİRİM SERVİSİ (CALLBACK) ====================
+# Ödeme tamamlandığında PayTR sunucuları sitemize arkadan bu POST isteğini atar kanka.
 @csrf_exempt
-def payment_success_view(request):
-    order_id = request.GET.get('order_id')
-    token = request.POST.get('token')
-    
-    if order_id:
+def paytr_callback_view(request):
+    if request.method == 'POST':
+        merchant_oid = request.POST.get('merchant_oid')
+        status = request.POST.get('status')
+        total_amount = request.POST.get('total_amount')
+        hash_received = request.POST.get('hash')
+
+        # Gelen isteğin doğruluğunu hash eşleşmesiyle kontrol ediyoruz kanka (Güvenlik Duvarı)
+        hash_str = merchant_oid + PAYTR_MERCHANT_SALT + status + total_amount
+        paytr_token = hmac.new(PAYTR_MERCHANT_KEY.encode('utf-8'), hash_str.encode('utf-8'), hashlib.sha256).digest()
+        token = base64.b64encode(paytr_token).decode('utf-8')
+
+        if token != hash_received:
+            return HttpResponse("FAIL: Bad Hash")
+
         try:
-            order = Order.objects.get(id=order_id)
+            order = Order.objects.get(id=int(merchant_oid))
             
-            if token:
-                request_data = {
-                    'locale': 'tr',
-                    'conversationId': str(order.id),
-                    'token': token
-                }
-                response_data = iyzico_raw_request('/payment/checkoutform/auth/ecom', request_data)
-                
-                if response_data.get('paymentStatus') == 'SUCCESS':
-                    order.status = 'Paid'
-                    order.save()
-                    send_invoice_pdf_email(order, request)
-                    
-                    try:
-                        request.user.cart.items.all().delete()
-                    except Cart.DoesNotExist:
-                        pass
-                else:
-                    messages.error(request, "Ödeme işlemi iyzico tarafından onaylanmadı kanka.")
-                    return redirect('index')
-            else:
-                order.status = 'Paid'
+            if status == 'success':
+                order.status = 'Paid'  # Siparişi ödendi olarak işaretle kanka
                 order.save()
+                
+                # Faturayı arka planda oluşturup e-posta gönder kanka
                 send_invoice_pdf_email(order, request)
                 
+                # Ödeme başarılı olduğu için kullanıcının sepetini uçur kanka
+                try:
+                    order.user.cart.items.all().delete()
+                except:
+                    pass
+                
+                return HttpResponse("OK")
+            else:
+                order.status = 'Failed'
+                order.save()
+                return HttpResponse("OK")  # Hata olsa da PayTR'a OK demeliyiz yoksa sürekli istek atar.
+                
         except Order.DoesNotExist:
-            print(f"--- DATABASE ERROR: Order #{order_id} could not be found! ---")
-            return redirect('index')
+            return HttpResponse("FAIL: Order Not Found")
             
+    return HttpResponse("Geçersiz İstek Kanka!")
+
+# ==================== PAYTR BAŞARI SAYFASI ====================
+def payment_success_view(request):
+    order_id = request.GET.get('order_id')
+    order = None
+    if order_id:
+        order = Order.objects.filter(id=order_id).first()
     return render(request, 'shop/payment_success.html', {'order_id': order_id, 'order': order})
 
 
@@ -538,13 +500,11 @@ def remove_coupon(request):
 
 @login_required(login_url='/login/')
 def my_favorites_view(request):
-    """Kanka: Üyenin favorilediği ürünleri listelediği sayfa view'ı"""
     favorites = request.user.favorites.all().order_by('-created_at')
     return render(request, 'shop/my_favorites.html', {'favorites': favorites})
 
 @login_required(login_url='/login/')
 def toggle_favorite(request, product_id):
-    """Kanka: Ürün detay sayfasında butona basınca favoriye ekler veya zaten varsa favoriden çıkartır"""
     product = get_object_or_404(Product, id=product_id)
     fav_exists = Favorite.objects.filter(user=request.user, product=product).first()
     
@@ -555,5 +515,14 @@ def toggle_favorite(request, product_id):
         Favorite.objects.create(user=request.user, product=product)
         messages.success(request, "Product added to your favorites.")
         
-    # Geldikleri sayfaya (Ürün detayına veya favori listesine) geri postalar kanka
     return redirect(request.META.get('HTTP_REFERER', 'my_favorites'))
+
+# shop/views.py en altına yapıştır kanka:
+def privacy_policy_view(request):
+    return render(request, 'shop/privacy_policy.html')
+
+def terms_of_sale_view(request):
+    return render(request, 'shop/terms_of_sale.html')
+
+def return_policy_view(request):
+    return render(request, 'shop/return_policy.html')

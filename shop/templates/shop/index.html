@@ -97,5 +97,39 @@
             {% endfor %}
         </div>
     </main>
+
+    <!-- 🛠️ GÜNCELLENEN KISIM: PAYTR ONAYI İÇİN YASAL METİNLER, İLETİŞİM BİLGİLERİ VE LOGOLAR kanka -->
+    <footer class="w-full bg-white border-t border-gray-200 py-12 text-center text-xs text-gray-500 mt-20">
+        <!-- 📄 Yasal Sözleşme Linkleri -->
+        <div class="max-w-7xl mx-auto px-4 flex flex-wrap justify-center items-center gap-3 md:gap-6 mb-6">
+            <a href="{% url 'privacy_policy' %}" class="text-gray-600 hover:text-amber-600 transition font-semibold">Privacy Policy</a>
+            <span class="text-gray-300 hidden sm:inline">|</span>
+            <a href="{% url 'terms_of_sale' %}" class="text-gray-600 hover:text-amber-600 transition font-semibold">Terms of Sale</a>
+            <span class="text-gray-300 hidden sm:inline">|</span>
+            <a href="{% url 'return_policy' %}" class="text-gray-600 hover:text-amber-600 transition font-semibold">Return & Cancellation Policy</a>
+        </div>
+
+        <!-- 📞 Satıcı İletişim Bilgileri (PayTR Burayı Şart Koşuyor Kanka) -->
+        <div class="max-w-2xl mx-auto px-4 mb-6 text-gray-500 space-y-1 bg-gray-50 py-4 rounded-xl border border-gray-100">
+            <h4 class="font-bold text-gray-700 text-sm mb-2 uppercase tracking-wider"><i class="fa-solid fa-address-book text-amber-600 mr-1"></i> Seller Contact Information</h4>
+            <p><span class="font-bold text-gray-600">Company / Title:</span> EK Metal Wall Art Ltd.</p>
+            <p><span class="font-bold text-gray-600">Email:</span> emirecilgin72@gmail.com <span class="text-gray-300 mx-1">|</span> 
+            <p><span class="font-bold text-gray-600">Address:</span> Istanbul, Turkiye</p>
+        </div>
+
+        <!-- 💳 Kabul Edilen Kart Logoları -->
+        <div class="flex justify-center items-center gap-5 mb-6 opacity-60 text-xl">
+            <i class="fa-brands fa-cc-visa text-blue-800" title="Visa"></i>
+            <i class="fa-brands fa-cc-mastercard text-orange-600" title="Mastercard"></i>
+            <i class="fa-brands fa-cc-stripe text-blue-500" title="Stripe"></i>
+            <i class="fa-solid fa-credit-card text-gray-700" title="Troy / Credit Card"></i>
+        </div>
+
+        <!-- 📜 Telif Hakkı -->
+        <div class="max-w-7xl mx-auto px-4 border-t border-gray-100 pt-4">
+            <p class="text-gray-400">&copy; 2026 EK METAL Wall Art. All rights reserved.</p>
+        </div>
+    </footer>
+
 </body>
 </html>
